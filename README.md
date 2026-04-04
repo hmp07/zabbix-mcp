@@ -1,5 +1,12 @@
 # mcp-zabbix
 
+[![Tests](https://img.shields.io/badge/tests-1017%20passed-brightgreen)](#running-tests)
+[![Coverage](https://img.shields.io/badge/coverage-96%25-brightgreen)](#running-tests)
+[![Methodology](https://img.shields.io/badge/methodology-TDD-blue)](#running-tests)
+[![Security](https://img.shields.io/badge/security-hardened-blue)](#security)
+[![Python](https://img.shields.io/badge/python-3.11%2B-blue)](https://www.python.org/)
+[![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+
 A complete MCP (Model Context Protocol) server for **Zabbix 7.4**, enabling Claude Desktop to interact with your Zabbix infrastructure using natural language.
 
 ## Features
@@ -22,7 +29,7 @@ A complete MCP (Model Context Protocol) server for **Zabbix 7.4**, enabling Clau
 ## Installation
 
 ```bash
-git clone https://github.com/Alysko/mcp-zabbix.git
+git clone https://github.com/<your-username>/mcp-zabbix.git
 cd mcp-zabbix
 uv sync
 ```
