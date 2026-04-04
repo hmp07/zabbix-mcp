@@ -29,8 +29,8 @@ A complete MCP (Model Context Protocol) server for **Zabbix 7.4**, enabling Clau
 ## Installation
 
 ```bash
-git clone https://github.com/<your-username>/mcp-zabbix.git
-cd mcp-zabbix
+git clone https://github.com/Alysko/zabbix-mcp.git
+cd zabbix-mcp
 uv sync
 ```
 
@@ -46,7 +46,7 @@ Edit `%APPDATA%\Claude\claude_desktop_config.json` (Windows) or `~/Library/Appli
     "zabbix": {
       "command": "uv",
       "args": [
-        "--directory", "/absolute/path/to/mcp-zabbix",
+        "--directory", "/absolute/path/to/zabbix-mcp",
         "run", "python", "-m", "zabbix_mcp.server"
       ],
       "env": {
