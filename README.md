@@ -1,4 +1,4 @@
-# mcp-zabbix
+# zabbix-mcp
 
 [![Tests](https://img.shields.io/badge/tests-1017%20passed-brightgreen)](#running-tests)
 [![Coverage](https://img.shields.io/badge/coverage-96%25-brightgreen)](#running-tests)
@@ -7,7 +7,7 @@
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-A complete MCP (Model Context Protocol) server for **Zabbix 7.4**, enabling Claude Desktop to interact with your Zabbix infrastructure using natural language.
+A complete [MCP](https://modelcontextprotocol.io/) server for **Zabbix 7.4**, enabling any MCP-compatible AI assistant to interact with your Zabbix infrastructure using natural language.
 
 ## Features
 
@@ -25,6 +25,7 @@ A complete MCP (Model Context Protocol) server for **Zabbix 7.4**, enabling Clau
 - [uv](https://docs.astral.sh/uv/getting-started/installation/)
 - A Zabbix 7.4 instance with API access
 - A Zabbix API token (*User settings → API tokens → Create token*)
+- An MCP-compatible client (e.g. [Claude Desktop](https://claude.ai/download), [Cursor](https://www.cursor.com/), [Continue](https://www.continue.dev/))
 
 ## Installation
 
@@ -36,9 +37,9 @@ uv sync
 
 ## Configuration
 
-### Claude Desktop
+### MCP client
 
-Edit `%APPDATA%\Claude\claude_desktop_config.json` (Windows) or `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS):
+Add the following to your MCP client's configuration file (exact path varies by client):
 
 ```json
 {
@@ -58,7 +59,7 @@ Edit `%APPDATA%\Claude\claude_desktop_config.json` (Windows) or `~/Library/Appli
 }
 ```
 
-Restart Claude Desktop completely (system tray → Quit, then relaunch).
+Restart your MCP client after saving the configuration.
 
 ### Environment variables
 
@@ -75,7 +76,7 @@ Restart Claude Desktop completely (system tray → Quit, then relaunch).
 
 ## Usage examples
 
-Once configured, just talk to Claude naturally:
+Once configured, interact with your Zabbix infrastructure naturally:
 
 > "What hosts are currently in problem state?"
 
@@ -105,7 +106,7 @@ Once configured, just talk to Claude naturally:
 | Reports | `zabbix_report_*` |
 | Workflow | `zabbix_host_problems_summary`, `zabbix_lld_scaffold`, `zabbix_template_link` |
 
-All tools follow the naming convention `zabbix_<resource>_<action>` and declare annotations (`readOnlyHint`, `destructiveHint`, `idempotentHint`) so Claude can make informed decisions about safety.
+All tools follow the naming convention `zabbix_<resource>_<action>` and declare annotations (`readOnlyHint`, `destructiveHint`, `idempotentHint`) so the AI assistant can make informed decisions about safety.
 
 ## Running tests
 
@@ -120,7 +121,7 @@ Coverage: **96%** — 1017 tests.
 
 ```
 zabbix_mcp/
-├── app.py          # FastMCP instance (shared across all modules)
+├── app.py          # MCP application instance (shared across all modules)
 ├── server.py       # Entry point, tool module imports, main()
 ├── client.py       # Zabbix API wrapper (auth, retry, pagination)
 ├── auth.py         # Credential management from env vars
