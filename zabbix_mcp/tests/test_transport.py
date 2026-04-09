@@ -1,10 +1,12 @@
-"""Phase 6 — Transport tests.
+"""Transport and registration tests.
 
 Verifies that:
 - All expected tools are registered on the FastMCP server.
 - Tool annotations are correct per category (read-only, write, delete).
 - Tool descriptions are present and non-empty.
 - All tools have openWorldHint=False (closed-world API).
+- is_read_only_mode() parses ZABBIX_READ_ONLY correctly.
+- get_transport_config() parses MCP_TRANSPORT/MCP_HOST/MCP_PORT correctly.
 - Client raises ValueError for malformed method names.
 """
 
@@ -14,14 +16,14 @@ import pytest
 
 from zabbix_mcp.app import mcp
 
-# ── helpers ──────────────────────────────────────────────────────────────────────────────
+# ── helpers ──────────────────────────────────────────────────────────────────
 
 def _get_tools() -> dict:
     """Return {name: tool} mapping from the live FastMCP server."""
     return {t.name: t for t in mcp._tool_manager.list_tools()}
 
 
-# ── coverage: expected tool names ──────────────────────────────────────────────────────────────────
+# ── coverage: expected tool names ────────────────────────────────────────────
 
 # Every tool that should be registered (78 endpoint-aligned + 3 workflow = 86 total
 # including zabbix_graph_item_get and zabbix_host_interface_get/create/update/delete)
@@ -98,7 +100,7 @@ _WRITE_TOOLS = [
 ]
 
 
-# ── registration tests ─────────────────────────────────────────────────────────────────────────
+# ── registration tests ───────────────────────────────────────────────────────
 
 class TestToolRegistration:
     def test_total_tool_count(self) -> None:
@@ -124,7 +126,7 @@ class TestToolRegistration:
         assert "properties" in params
 
 
-# ── annotation tests ───────────────────────────────────────────────────────────────────────────
+# ── annotation tests ─────────────────────────────────────────────────────────
 
 class TestReadOnlyAnnotations:
     @pytest.mark.parametrize("name", _READ_ONLY_TOOLS)
@@ -190,7 +192,7 @@ class TestClosedWorldAnnotation:
         assert ann.openWorldHint is False, f"'{name}' should have openWorldHint=False"
 
 
-# ── naming convention ─────────────────────────────────────────────────────────────────────────────
+# ── naming convention ─────────────────────────────────────────────────────────
 
 class TestNamingConvention:
     def test_all_tools_prefixed_zabbix(self) -> None:
@@ -204,7 +206,111 @@ class TestNamingConvention:
             assert "-" not in name, f"Tool '{name}' uses hyphens instead of underscores"
 
 
-# ── client method validation ──────────────────────────────────────────────────────────────────────
+# ── read-only mode ────────────────────────────────────────────────────────────
+
+class TestReadOnlyMode:
+    """Verify is_read_only_mode() parsing and tool annotation consistency."""
+
+    def test_is_read_only_false_by_default(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.delenv("ZABBIX_READ_ONLY", raising=False)
+        from zabbix_mcp.auth import is_read_only_mode
+        assert is_read_only_mode() is False
+
+    @pytest.mark.parametrize("value", ["true", "True", "TRUE", "1", "yes"])
+    def test_is_read_only_true_variants(self, monkeypatch: pytest.MonkeyPatch, value: str) -> None:
+        monkeypatch.setenv("ZABBIX_READ_ONLY", value)
+        from zabbix_mcp.auth import is_read_only_mode
+        assert is_read_only_mode() is True
+
+    @pytest.mark.parametrize("value", ["false", "False", "0", "no", ""])
+    def test_is_read_only_false_variants(self, monkeypatch: pytest.MonkeyPatch, value: str) -> None:
+        monkeypatch.setenv("ZABBIX_READ_ONLY", value)
+        from zabbix_mcp.auth import is_read_only_mode
+        assert is_read_only_mode() is False
+
+    def test_write_and_delete_tools_have_read_only_hint_false(self) -> None:
+        """All write/delete tools must have readOnlyHint=False so read-only mode can filter them."""
+        tools = _get_tools()
+        for name in _DELETE_TOOLS + _WRITE_TOOLS:
+            ann = tools[name].annotations
+            assert ann.readOnlyHint is False, (
+                f"'{name}' has readOnlyHint=True but is a write/delete tool"
+            )
+
+    def test_read_only_tools_are_correctly_identified_by_annotation(self) -> None:
+        """readOnlyHint=True tools exactly match the expected read-only set."""
+        tools = _get_tools()
+        annotated_read_only = {
+            name for name, t in tools.items()
+            if t.annotations and t.annotations.readOnlyHint
+        }
+        assert annotated_read_only == set(_READ_ONLY_TOOLS)
+
+    def test_non_read_only_tools_would_be_removed_count(self) -> None:
+        """The set of non-read-only tools equals write + delete tools."""
+        tools = _get_tools()
+        non_read_only = {
+            name for name, t in tools.items()
+            if not (t.annotations and t.annotations.readOnlyHint)
+        }
+        expected = set(_DELETE_TOOLS) | set(_WRITE_TOOLS)
+        assert non_read_only == expected
+
+
+# ── transport config ──────────────────────────────────────────────────────────
+
+class TestTransportConfig:
+    """Verify get_transport_config() parses environment variables correctly."""
+
+    def test_default_transport_is_stdio(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.delenv("MCP_TRANSPORT", raising=False)
+        from zabbix_mcp.auth import get_transport_config
+        assert get_transport_config()["transport"] == "stdio"
+
+    @pytest.mark.parametrize("value", ["http", "sse", "stdio"])
+    def test_valid_transport_values(self, monkeypatch: pytest.MonkeyPatch, value: str) -> None:
+        monkeypatch.setenv("MCP_TRANSPORT", value)
+        from zabbix_mcp.auth import get_transport_config
+        assert get_transport_config()["transport"] == value
+
+    def test_unknown_transport_falls_back_to_stdio(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setenv("MCP_TRANSPORT", "websocket")
+        from zabbix_mcp.auth import get_transport_config
+        assert get_transport_config()["transport"] == "stdio"
+
+    def test_default_host_is_localhost(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.delenv("MCP_HOST", raising=False)
+        from zabbix_mcp.auth import get_transport_config
+        assert get_transport_config()["host"] == "127.0.0.1"
+
+    def test_custom_host(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setenv("MCP_HOST", "192.168.1.10")
+        from zabbix_mcp.auth import get_transport_config
+        assert get_transport_config()["host"] == "192.168.1.10"
+
+    def test_default_port_is_8000(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.delenv("MCP_PORT", raising=False)
+        from zabbix_mcp.auth import get_transport_config
+        assert get_transport_config()["port"] == 8000
+
+    def test_custom_port(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setenv("MCP_PORT", "9090")
+        from zabbix_mcp.auth import get_transport_config
+        assert get_transport_config()["port"] == 9090
+
+    def test_invalid_port_falls_back_to_8000(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setenv("MCP_PORT", "not_a_number")
+        from zabbix_mcp.auth import get_transport_config
+        assert get_transport_config()["port"] == 8000
+
+    def test_transport_config_returns_all_keys(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.delenv("MCP_TRANSPORT", raising=False)
+        from zabbix_mcp.auth import get_transport_config
+        config = get_transport_config()
+        assert {"transport", "host", "port"} == set(config.keys())
+
+
+# ── client method validation ──────────────────────────────────────────────────
 
 class TestClientMethodValidation:
     async def test_invalid_method_format_raises_value_error(self, zabbix_env: dict) -> None:

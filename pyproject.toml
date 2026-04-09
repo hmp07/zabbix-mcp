@@ -18,6 +18,9 @@ dev = [
     "pytest-cov>=5.0",
 ]
 
+[project.scripts]
+zabbix-mcp = "zabbix_mcp.server:main"
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
