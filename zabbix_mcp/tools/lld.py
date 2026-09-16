@@ -8,13 +8,7 @@ from pydantic import Field
 
 from ..client import ZabbixClient
 from ..app import mcp
-
-_READ_ONLY = {
-    "readOnlyHint": True,
-    "destructiveHint": False,
-    "idempotentHint": True,
-    "openWorldHint": False,
-}
+from ._annotations import DELETE, READ_ONLY, WRITE, WRITE_IDEMPOTENT
 
 
 @mcp.tool(
@@ -23,7 +17,7 @@ _READ_ONLY = {
         "List Zabbix LLD (Low-Level Discovery) rules. Filter by host, template, or key. "
         "LLD rules automatically discover and create items, triggers, and graphs."
     ),
-    annotations=_READ_ONLY,
+    annotations=READ_ONLY,
 )
 async def zabbix_lld_rule_get(
     itemids: Annotated[list[str] | None, Field(description="Return only LLD rules with these IDs.")] = None,
@@ -64,7 +58,7 @@ async def zabbix_lld_rule_get(
         "List item prototypes for LLD rules. "
         "Item prototypes define which items get created when the LLD rule discovers new entities."
     ),
-    annotations=_READ_ONLY,
+    annotations=READ_ONLY,
 )
 async def zabbix_lld_item_prototype_get(
     itemids: Annotated[list[str] | None, Field(description="Return only item prototypes with these IDs.")] = None,
@@ -102,7 +96,7 @@ async def zabbix_lld_item_prototype_get(
         "List trigger prototypes for LLD rules. "
         "Trigger prototypes define which triggers get created for each discovered entity."
     ),
-    annotations=_READ_ONLY,
+    annotations=READ_ONLY,
 )
 async def zabbix_lld_trigger_prototype_get(
     triggerids: Annotated[list[str] | None, Field(description="Return only trigger prototypes with these IDs.")] = None,
@@ -134,7 +128,7 @@ async def zabbix_lld_trigger_prototype_get(
 @mcp.tool(
     name="zabbix_lld_graph_prototype_get",
     description="List graph prototypes for LLD rules.",
-    annotations=_READ_ONLY,
+    annotations=READ_ONLY,
 )
 async def zabbix_lld_graph_prototype_get(
     graphids: Annotated[list[str] | None, Field(description="Return only graph prototypes with these IDs.")] = None,
@@ -164,7 +158,7 @@ async def zabbix_lld_graph_prototype_get(
         "List host prototypes for LLD rules. "
         "Host prototypes define which hosts get created for each entity discovered by network-level LLD."
     ),
-    annotations=_READ_ONLY,
+    annotations=READ_ONLY,
 )
 async def zabbix_lld_host_prototype_get(
     hostids: Annotated[list[str] | None, Field(description="Return only host prototypes with these IDs.")] = None,
@@ -190,21 +184,6 @@ async def zabbix_lld_host_prototype_get(
         return await client.call("hostprototype.get", params)
 
 
-_WRITE = {
-    "readOnlyHint": False,
-    "destructiveHint": False,
-    "idempotentHint": False,
-    "openWorldHint": False,
-}
-
-_WRITE_IDEMPOTENT = {
-    "readOnlyHint": False,
-    "destructiveHint": False,
-    "idempotentHint": True,
-    "openWorldHint": False,
-}
-
-
 @mcp.tool(
     name="zabbix_lld_rule_create",
     description=(
@@ -214,7 +193,7 @@ _WRITE_IDEMPOTENT = {
         "13=SSH, 14=Telnet, 16=JMX, 18=Dependent, 19=HTTP agent, 20=SNMP, 21=Script. "
         "Returns the new LLD rule ID."
     ),
-    annotations=_WRITE,
+    annotations=WRITE,
 )
 async def zabbix_lld_rule_create(
     hostid: Annotated[str, Field(description="ID of the host to add the LLD rule to.")],
@@ -254,7 +233,7 @@ async def zabbix_lld_rule_create(
 @mcp.tool(
     name="zabbix_lld_rule_update",
     description="Update an existing Zabbix LLD rule. Only provided fields are changed. Returns the updated rule ID.",
-    annotations=_WRITE_IDEMPOTENT,
+    annotations=WRITE_IDEMPOTENT,
 )
 async def zabbix_lld_rule_update(
     itemid: Annotated[str, Field(description="ID of the LLD rule to update.")],
@@ -300,7 +279,7 @@ async def zabbix_lld_rule_update(
         "value_type: 0=float, 1=char, 2=log, 3=unsigned int, 4=text. "
         "Returns the new item prototype ID."
     ),
-    annotations=_WRITE,
+    annotations=WRITE,
 )
 async def zabbix_lld_item_prototype_create(
     hostid: Annotated[str, Field(description="ID of the host owning this prototype.")],
@@ -344,7 +323,7 @@ async def zabbix_lld_item_prototype_create(
 @mcp.tool(
     name="zabbix_lld_item_prototype_update",
     description="Update an existing LLD item prototype. Only provided fields are changed. Returns the updated prototype ID.",
-    annotations=_WRITE_IDEMPOTENT,
+    annotations=WRITE_IDEMPOTENT,
 )
 async def zabbix_lld_item_prototype_update(
     itemid: Annotated[str, Field(description="ID of the item prototype to update.")],
@@ -392,7 +371,7 @@ async def zabbix_lld_item_prototype_update(
         "The expression must reference item prototypes using LLD macros. "
         "Returns the new trigger prototype ID."
     ),
-    annotations=_WRITE,
+    annotations=WRITE,
 )
 async def zabbix_lld_trigger_prototype_create(
     description: Annotated[str, Field(description="Trigger prototype description. May contain LLD macros.")],
@@ -431,7 +410,7 @@ async def zabbix_lld_trigger_prototype_create(
 @mcp.tool(
     name="zabbix_lld_trigger_prototype_update",
     description="Update an existing LLD trigger prototype. Only provided fields are changed. Returns the updated prototype ID.",
-    annotations=_WRITE_IDEMPOTENT,
+    annotations=WRITE_IDEMPOTENT,
 )
 async def zabbix_lld_trigger_prototype_update(
     triggerid: Annotated[str, Field(description="ID of the trigger prototype to update.")],
@@ -470,7 +449,7 @@ async def zabbix_lld_trigger_prototype_update(
         "gitems must reference item prototypes. "
         "Returns the new graph prototype ID."
     ),
-    annotations=_WRITE,
+    annotations=WRITE,
 )
 async def zabbix_lld_graph_prototype_create(
     name: Annotated[str, Field(description="Graph prototype name. May contain LLD macros.")],
@@ -496,7 +475,7 @@ async def zabbix_lld_graph_prototype_create(
 @mcp.tool(
     name="zabbix_lld_graph_prototype_update",
     description="Update an existing LLD graph prototype. Only provided fields are changed. Returns the updated prototype ID.",
-    annotations=_WRITE_IDEMPOTENT,
+    annotations=WRITE_IDEMPOTENT,
 )
 async def zabbix_lld_graph_prototype_update(
     graphid: Annotated[str, Field(description="ID of the graph prototype to update.")],
@@ -530,7 +509,7 @@ async def zabbix_lld_graph_prototype_update(
         "The host field may contain LLD macros. "
         "Returns the new host prototype ID."
     ),
-    annotations=_WRITE,
+    annotations=WRITE,
 )
 async def zabbix_lld_host_prototype_create(
     ruleid: Annotated[str, Field(description="ID of the parent LLD rule.")],
@@ -565,7 +544,7 @@ async def zabbix_lld_host_prototype_create(
 @mcp.tool(
     name="zabbix_lld_host_prototype_update",
     description="Update an existing LLD host prototype. Only provided fields are changed. Returns the updated prototype ID.",
-    annotations=_WRITE_IDEMPOTENT,
+    annotations=WRITE_IDEMPOTENT,
 )
 async def zabbix_lld_host_prototype_update(
     hostid: Annotated[str, Field(description="ID of the host prototype to update.")],
@@ -597,21 +576,13 @@ async def zabbix_lld_host_prototype_update(
         return await client.call("hostprototype.update", params)
 
 
-_DELETE = {
-    "readOnlyHint": False,
-    "destructiveHint": True,
-    "idempotentHint": True,
-    "openWorldHint": False,
-}
-
-
 @mcp.tool(
     name="zabbix_lld_rule_delete",
     description=(
         "DESTRUCTIVE — Permanently delete Zabbix LLD rules and all their discovered items, triggers, and graphs. "
         "This action cannot be undone. Returns the deleted rule IDs."
     ),
-    annotations=_DELETE,
+    annotations=DELETE,
 )
 async def zabbix_lld_rule_delete(
     itemids: Annotated[list[str], Field(description="IDs of LLD rules to delete.")],
@@ -627,7 +598,7 @@ async def zabbix_lld_rule_delete(
         "DESTRUCTIVE — Permanently delete LLD item prototypes and all items created from them. "
         "This action cannot be undone. Returns the deleted prototype IDs."
     ),
-    annotations=_DELETE,
+    annotations=DELETE,
 )
 async def zabbix_lld_item_prototype_delete(
     itemids: Annotated[list[str], Field(description="IDs of item prototypes to delete.")],
@@ -643,7 +614,7 @@ async def zabbix_lld_item_prototype_delete(
         "DESTRUCTIVE — Permanently delete LLD trigger prototypes and all triggers created from them. "
         "This action cannot be undone. Returns the deleted prototype IDs."
     ),
-    annotations=_DELETE,
+    annotations=DELETE,
 )
 async def zabbix_lld_trigger_prototype_delete(
     triggerids: Annotated[list[str], Field(description="IDs of trigger prototypes to delete.")],
@@ -659,7 +630,7 @@ async def zabbix_lld_trigger_prototype_delete(
         "DESTRUCTIVE — Permanently delete LLD graph prototypes and all graphs created from them. "
         "This action cannot be undone. Returns the deleted prototype IDs."
     ),
-    annotations=_DELETE,
+    annotations=DELETE,
 )
 async def zabbix_lld_graph_prototype_delete(
     graphids: Annotated[list[str], Field(description="IDs of graph prototypes to delete.")],
@@ -675,7 +646,7 @@ async def zabbix_lld_graph_prototype_delete(
         "DESTRUCTIVE — Permanently delete LLD host prototypes and all hosts created from them. "
         "This action cannot be undone. Returns the deleted prototype IDs."
     ),
-    annotations=_DELETE,
+    annotations=DELETE,
 )
 async def zabbix_lld_host_prototype_delete(
     hostids: Annotated[list[str], Field(description="IDs of host prototypes to delete.")],

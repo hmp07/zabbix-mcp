@@ -8,13 +8,7 @@ from pydantic import Field
 
 from ..client import ZabbixClient
 from ..app import mcp
-
-_READ_ONLY = {
-    "readOnlyHint": True,
-    "destructiveHint": False,
-    "idempotentHint": True,
-    "openWorldHint": False,
-}
+from ._annotations import DELETE, READ_ONLY, WRITE, WRITE_IDEMPOTENT
 
 
 @mcp.tool(
@@ -23,7 +17,7 @@ _READ_ONLY = {
         "List Zabbix templates. Filter by template ID, group, or linked host. "
         "Templates define reusable sets of items, triggers, graphs, and LLD rules."
     ),
-    annotations=_READ_ONLY,
+    annotations=READ_ONLY,
 )
 async def zabbix_template_get(
     templateids: Annotated[list[str] | None, Field(description="Return only templates with these IDs.")] = None,
@@ -52,7 +46,7 @@ async def zabbix_template_get(
 @mcp.tool(
     name="zabbix_templategroup_get",
     description="List Zabbix template groups. Filter by group ID, name, or linked template.",
-    annotations=_READ_ONLY,
+    annotations=READ_ONLY,
 )
 async def zabbix_templategroup_get(
     groupids: Annotated[list[str] | None, Field(description="Return only groups with these IDs.")] = None,
@@ -79,7 +73,7 @@ async def zabbix_templategroup_get(
         "List Zabbix value maps. Value maps translate raw numeric values into human-readable labels "
         "(e.g., 0 -> 'Down', 1 -> 'Up')."
     ),
-    annotations=_READ_ONLY,
+    annotations=READ_ONLY,
 )
 async def zabbix_valuemap_get(
     valuemapids: Annotated[list[str] | None, Field(description="Return only value maps with these IDs.")] = None,
@@ -108,7 +102,7 @@ async def zabbix_valuemap_get(
 @mcp.tool(
     name="zabbix_report_get",
     description="List Zabbix scheduled reports. Filter by report ID or owner.",
-    annotations=_READ_ONLY,
+    annotations=READ_ONLY,
 )
 async def zabbix_report_get(
     reportids: Annotated[list[str] | None, Field(description="Return only reports with these IDs.")] = None,
@@ -131,21 +125,6 @@ async def zabbix_report_get(
         return await client.call("report.get", params)
 
 
-_WRITE = {
-    "readOnlyHint": False,
-    "destructiveHint": False,
-    "idempotentHint": False,
-    "openWorldHint": False,
-}
-
-_WRITE_IDEMPOTENT = {
-    "readOnlyHint": False,
-    "destructiveHint": False,
-    "idempotentHint": True,
-    "openWorldHint": False,
-}
-
-
 @mcp.tool(
     name="zabbix_template_create",
     description=(
@@ -153,7 +132,7 @@ _WRITE_IDEMPOTENT = {
         "Templates group items, triggers, graphs, and LLD rules for reuse across hosts. "
         "Returns the new template ID."
     ),
-    annotations=_WRITE,
+    annotations=WRITE,
 )
 async def zabbix_template_create(
     host: Annotated[str, Field(description="Technical template name (unique identifier).")],
@@ -183,7 +162,7 @@ async def zabbix_template_create(
 @mcp.tool(
     name="zabbix_template_update",
     description="Update an existing Zabbix template. Only provided fields are changed. Returns the updated template ID.",
-    annotations=_WRITE_IDEMPOTENT,
+    annotations=WRITE_IDEMPOTENT,
 )
 async def zabbix_template_update(
     templateid: Annotated[str, Field(description="ID of the template to update.")],
@@ -218,7 +197,7 @@ async def zabbix_template_update(
 @mcp.tool(
     name="zabbix_templategroup_create",
     description="Create a new Zabbix template group. Returns the new group ID.",
-    annotations=_WRITE,
+    annotations=WRITE,
 )
 async def zabbix_templategroup_create(
     name: Annotated[str, Field(description="Template group name.")],
@@ -231,7 +210,7 @@ async def zabbix_templategroup_create(
 @mcp.tool(
     name="zabbix_templategroup_update",
     description="Update an existing Zabbix template group name. Returns the updated group ID.",
-    annotations=_WRITE_IDEMPOTENT,
+    annotations=WRITE_IDEMPOTENT,
 )
 async def zabbix_templategroup_update(
     groupid: Annotated[str, Field(description="ID of the template group to update.")],
@@ -249,7 +228,7 @@ async def zabbix_templategroup_update(
         "mappings define the translation rules. "
         "Returns the new value map ID."
     ),
-    annotations=_WRITE,
+    annotations=WRITE,
 )
 async def zabbix_valuemap_create(
     hostid: Annotated[str, Field(description="ID of the host or template to attach this value map to.")],
@@ -269,7 +248,7 @@ async def zabbix_valuemap_create(
 @mcp.tool(
     name="zabbix_valuemap_update",
     description="Update an existing Zabbix value map. Only provided fields are changed. Returns the updated value map ID.",
-    annotations=_WRITE_IDEMPOTENT,
+    annotations=WRITE_IDEMPOTENT,
 )
 async def zabbix_valuemap_update(
     valuemapid: Annotated[str, Field(description="ID of the value map to update.")],
@@ -293,7 +272,7 @@ async def zabbix_valuemap_update(
         "period: 0=daily, 1=weekly, 2=monthly, 3=yearly. "
         "Returns the new report ID."
     ),
-    annotations=_WRITE,
+    annotations=WRITE,
 )
 async def zabbix_report_create(
     name: Annotated[str, Field(description="Report name.")],
@@ -334,7 +313,7 @@ async def zabbix_report_create(
 @mcp.tool(
     name="zabbix_report_update",
     description="Update an existing Zabbix scheduled report. Only provided fields are changed. Returns the updated report ID.",
-    annotations=_WRITE_IDEMPOTENT,
+    annotations=WRITE_IDEMPOTENT,
 )
 async def zabbix_report_update(
     reportid: Annotated[str, Field(description="ID of the report to update.")],
@@ -372,14 +351,6 @@ async def zabbix_report_update(
         return await client.call("report.update", params)
 
 
-_DELETE = {
-    "readOnlyHint": False,
-    "destructiveHint": True,
-    "idempotentHint": True,
-    "openWorldHint": False,
-}
-
-
 @mcp.tool(
     name="zabbix_template_delete",
     description=(
@@ -387,7 +358,7 @@ _DELETE = {
         "All items, triggers, and graphs defined in the template will be removed from linked hosts. "
         "This action cannot be undone. Returns the deleted template IDs."
     ),
-    annotations=_DELETE,
+    annotations=DELETE,
 )
 async def zabbix_template_delete(
     templateids: Annotated[list[str], Field(description="IDs of templates to delete.")],
@@ -404,7 +375,7 @@ async def zabbix_template_delete(
         "Groups that contain templates cannot be deleted. "
         "Returns the deleted group IDs."
     ),
-    annotations=_DELETE,
+    annotations=DELETE,
 )
 async def zabbix_templategroup_delete(
     groupids: Annotated[list[str], Field(description="IDs of template groups to delete.")],
@@ -421,7 +392,7 @@ async def zabbix_templategroup_delete(
         "Items using these value maps will display raw values. "
         "Returns the deleted value map IDs."
     ),
-    annotations=_DELETE,
+    annotations=DELETE,
 )
 async def zabbix_valuemap_delete(
     valuemapids: Annotated[list[str], Field(description="IDs of value maps to delete.")],
@@ -437,7 +408,7 @@ async def zabbix_valuemap_delete(
         "DESTRUCTIVE — Permanently delete Zabbix scheduled reports. "
         "This action cannot be undone. Returns the deleted report IDs."
     ),
-    annotations=_DELETE,
+    annotations=DELETE,
 )
 async def zabbix_report_delete(
     reportids: Annotated[list[str], Field(description="IDs of reports to delete.")],

@@ -5,14 +5,10 @@ from typing import Annotated, Any
 from pydantic import Field
 from ..client import ZabbixClient
 from ..app import mcp
-
-_READ_ONLY = {"readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": False}
-_WRITE = {"readOnlyHint": False, "destructiveHint": False, "idempotentHint": False, "openWorldHint": False}
-_WRITE_IDEMPOTENT = {"readOnlyHint": False, "destructiveHint": False, "idempotentHint": True, "openWorldHint": False}
-_DELETE = {"readOnlyHint": False, "destructiveHint": True, "idempotentHint": True, "openWorldHint": False}
+from ._annotations import DELETE, READ_ONLY, WRITE, WRITE_IDEMPOTENT
 
 
-@mcp.tool(name="zabbix_graph_get", description="List Zabbix graphs. Filter by host, group, template, or name.", annotations=_READ_ONLY)
+@mcp.tool(name="zabbix_graph_get", description="List Zabbix graphs. Filter by host, group, template, or name.", annotations=READ_ONLY)
 async def zabbix_graph_get(
     graphids: Annotated[list[str] | None, Field(description="Return only graphs with these IDs.")] = None,
     hostids: Annotated[list[str] | None, Field(description="Return graphs on these host IDs.")] = None,
@@ -32,7 +28,7 @@ async def zabbix_graph_get(
         return await client.call("graph.get", params)
 
 
-@mcp.tool(name="zabbix_graph_item_get", description="List items included in Zabbix graphs. Use this to inspect which items compose an existing graph.", annotations=_READ_ONLY)
+@mcp.tool(name="zabbix_graph_item_get", description="List items included in Zabbix graphs. Use this to inspect which items compose an existing graph.", annotations=READ_ONLY)
 async def zabbix_graph_item_get(
     graphids: Annotated[list[str] | None, Field(description="Return items for these graph IDs.")] = None,
     itemids: Annotated[list[str] | None, Field(description="Return graph items for these item IDs.")] = None,
@@ -46,7 +42,7 @@ async def zabbix_graph_item_get(
         return await client.call("graphitem.get", params)
 
 
-@mcp.tool(name="zabbix_graph_create", description="Create a new Zabbix graph. type: 0=normal, 1=stacked, 2=pie, 3=exploded.", annotations=_WRITE)
+@mcp.tool(name="zabbix_graph_create", description="Create a new Zabbix graph. type: 0=normal, 1=stacked, 2=pie, 3=exploded.", annotations=WRITE)
 async def zabbix_graph_create(
     name: Annotated[str, Field(description="Graph name.")],
     gitems: Annotated[list[dict[str, Any]], Field(description="Items to plot.")],
@@ -59,7 +55,7 @@ async def zabbix_graph_create(
         return await client.call("graph.create", {"name": name, "gitems": gitems, "width": width, "height": height, "graphtype": type, "show_legend": show_legend})
 
 
-@mcp.tool(name="zabbix_graph_update", description="Update an existing Zabbix graph. Only provided fields are changed.", annotations=_WRITE_IDEMPOTENT)
+@mcp.tool(name="zabbix_graph_update", description="Update an existing Zabbix graph. Only provided fields are changed.", annotations=WRITE_IDEMPOTENT)
 async def zabbix_graph_update(
     graphid: Annotated[str, Field(description="ID of the graph to update.")],
     name: Annotated[str | None, Field(description="New name.")]=None,
@@ -78,7 +74,7 @@ async def zabbix_graph_update(
         return await client.call("graph.update", params)
 
 
-@mcp.tool(name="zabbix_graph_delete", description="⚠️ DESTRUCTIVE — Permanently delete Zabbix graphs. Cannot be undone.", annotations=_DELETE)
+@mcp.tool(name="zabbix_graph_delete", description="⚠️ DESTRUCTIVE — Permanently delete Zabbix graphs. Cannot be undone.", annotations=DELETE)
 async def zabbix_graph_delete(graphids: Annotated[list[str], Field(description="IDs of graphs to delete.")]) -> dict[str, Any]:
     async with ZabbixClient() as client:
         return await client.call("graph.delete", graphids)

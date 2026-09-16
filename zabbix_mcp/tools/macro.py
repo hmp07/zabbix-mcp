@@ -8,13 +8,7 @@ from pydantic import Field
 
 from ..client import ZabbixClient
 from ..app import mcp
-
-_READ_ONLY = {
-    "readOnlyHint": True,
-    "destructiveHint": False,
-    "idempotentHint": True,
-    "openWorldHint": False,
-}
+from ._annotations import DELETE, READ_ONLY, WRITE, WRITE_IDEMPOTENT
 
 
 @mcp.tool(
@@ -24,7 +18,7 @@ _READ_ONLY = {
         "User macros are reusable variables ({$MACRO}) used in items, triggers, and LLD rules. "
         "Set globalmacro=true to return global macros instead of host-level ones."
     ),
-    annotations=_READ_ONLY,
+    annotations=READ_ONLY,
 )
 async def zabbix_usermacro_get(
     hostmacroids: Annotated[list[str] | None, Field(description="Return only macros with these IDs.")] = None,
@@ -55,21 +49,6 @@ async def zabbix_usermacro_get(
         return await client.call("usermacro.get", params)
 
 
-_WRITE = {
-    "readOnlyHint": False,
-    "destructiveHint": False,
-    "idempotentHint": False,
-    "openWorldHint": False,
-}
-
-_WRITE_IDEMPOTENT = {
-    "readOnlyHint": False,
-    "destructiveHint": False,
-    "idempotentHint": True,
-    "openWorldHint": False,
-}
-
-
 @mcp.tool(
     name="zabbix_usermacro_create",
     description=(
@@ -78,7 +57,7 @@ _WRITE_IDEMPOTENT = {
         "type: 0=text (default), 1=secret (value redacted in UI), 2=vault secret. "
         "Returns the new macro ID."
     ),
-    annotations=_WRITE,
+    annotations=WRITE,
 )
 async def zabbix_usermacro_create(
     hostid: Annotated[str, Field(description="ID of the host or template to add the macro to.")],
@@ -103,7 +82,7 @@ async def zabbix_usermacro_create(
 @mcp.tool(
     name="zabbix_usermacro_update",
     description="Update an existing user macro. Only provided fields are changed. Returns the updated macro ID.",
-    annotations=_WRITE_IDEMPOTENT,
+    annotations=WRITE_IDEMPOTENT,
 )
 async def zabbix_usermacro_update(
     hostmacroid: Annotated[str, Field(description="ID of the macro to update.")],
@@ -123,14 +102,6 @@ async def zabbix_usermacro_update(
         return await client.call("usermacro.update", params)
 
 
-_DELETE = {
-    "readOnlyHint": False,
-    "destructiveHint": True,
-    "idempotentHint": True,
-    "openWorldHint": False,
-}
-
-
 @mcp.tool(
     name="zabbix_usermacro_delete",
     description=(
@@ -138,7 +109,7 @@ _DELETE = {
         "Items and triggers referencing these macros will use unresolved macro names. "
         "Returns the deleted macro IDs."
     ),
-    annotations=_DELETE,
+    annotations=DELETE,
 )
 async def zabbix_usermacro_delete(
     hostmacroids: Annotated[list[str], Field(description="IDs of user macros to delete.")],

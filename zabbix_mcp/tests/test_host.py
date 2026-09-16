@@ -280,8 +280,8 @@ class TestZabbixHostDelete:
         assert mock.call.call_args[0][1] == ["5"]
 
     async def test_destructive_annotation(self, zabbix_env: dict) -> None:
-        from zabbix_mcp.tools.host import _DELETE
-        assert _DELETE["destructiveHint"] is True
+        from zabbix_mcp.tools.host import DELETE
+        assert DELETE["destructiveHint"] is True
 
 
 class TestZabbixHostInterfaceDelete:

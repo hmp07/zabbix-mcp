@@ -8,19 +8,13 @@ from pydantic import Field
 
 from ..client import ZabbixClient
 from ..app import mcp
-
-_READ_ONLY = {
-    "readOnlyHint": True,
-    "destructiveHint": False,
-    "idempotentHint": True,
-    "openWorldHint": False,
-}
+from ._annotations import DELETE, READ_ONLY, WRITE, WRITE_IDEMPOTENT
 
 
 @mcp.tool(
     name="zabbix_dashboard_get",
     description="List Zabbix dashboards. Filter by dashboard ID, name, or owner.",
-    annotations=_READ_ONLY,
+    annotations=READ_ONLY,
 )
 async def zabbix_dashboard_get(
     dashboardids: Annotated[list[str] | None, Field(description="Return only dashboards with these IDs.")] = None,
@@ -46,7 +40,7 @@ async def zabbix_dashboard_get(
 @mcp.tool(
     name="zabbix_template_dashboard_get",
     description="List dashboards defined inside Zabbix templates.",
-    annotations=_READ_ONLY,
+    annotations=READ_ONLY,
 )
 async def zabbix_template_dashboard_get(
     dashboardids: Annotated[list[str] | None, Field(description="Return only template dashboards with these IDs.")] = None,
@@ -69,21 +63,6 @@ async def zabbix_template_dashboard_get(
         return await client.call("templatedashboard.get", params)
 
 
-_WRITE = {
-    "readOnlyHint": False,
-    "destructiveHint": False,
-    "idempotentHint": False,
-    "openWorldHint": False,
-}
-
-_WRITE_IDEMPOTENT = {
-    "readOnlyHint": False,
-    "destructiveHint": False,
-    "idempotentHint": True,
-    "openWorldHint": False,
-}
-
-
 @mcp.tool(
     name="zabbix_dashboard_create",
     description=(
@@ -92,7 +71,7 @@ _WRITE_IDEMPOTENT = {
         "private: 0=public (all users), 1=private (owner only). "
         "Returns the new dashboard ID."
     ),
-    annotations=_WRITE,
+    annotations=WRITE,
 )
 async def zabbix_dashboard_create(
     name: Annotated[str, Field(description="Dashboard name.")],
@@ -113,7 +92,7 @@ async def zabbix_dashboard_create(
 @mcp.tool(
     name="zabbix_dashboard_update",
     description="Update an existing Zabbix dashboard. Only provided fields are changed. Returns the updated dashboard ID.",
-    annotations=_WRITE_IDEMPOTENT,
+    annotations=WRITE_IDEMPOTENT,
 )
 async def zabbix_dashboard_update(
     dashboardid: Annotated[str, Field(description="ID of the dashboard to update.")],
@@ -136,7 +115,7 @@ async def zabbix_dashboard_update(
 @mcp.tool(
     name="zabbix_template_dashboard_create",
     description="Create a dashboard inside a Zabbix template. Returns the new dashboard ID.",
-    annotations=_WRITE,
+    annotations=WRITE,
 )
 async def zabbix_template_dashboard_create(
     templateid: Annotated[str, Field(description="ID of the template to add the dashboard to.")],
@@ -154,7 +133,7 @@ async def zabbix_template_dashboard_create(
 @mcp.tool(
     name="zabbix_template_dashboard_update",
     description="Update an existing Zabbix template dashboard. Returns the updated dashboard ID.",
-    annotations=_WRITE_IDEMPOTENT,
+    annotations=WRITE_IDEMPOTENT,
 )
 async def zabbix_template_dashboard_update(
     dashboardid: Annotated[str, Field(description="ID of the template dashboard to update.")],
@@ -171,21 +150,13 @@ async def zabbix_template_dashboard_update(
         return await client.call("templatedashboard.update", params)
 
 
-_DELETE = {
-    "readOnlyHint": False,
-    "destructiveHint": True,
-    "idempotentHint": True,
-    "openWorldHint": False,
-}
-
-
 @mcp.tool(
     name="zabbix_dashboard_delete",
     description=(
         "DESTRUCTIVE — Permanently delete Zabbix dashboards. "
         "This action cannot be undone. Returns the deleted dashboard IDs."
     ),
-    annotations=_DELETE,
+    annotations=DELETE,
 )
 async def zabbix_dashboard_delete(
     dashboardids: Annotated[list[str], Field(description="IDs of dashboards to delete.")],
@@ -201,7 +172,7 @@ async def zabbix_dashboard_delete(
         "DESTRUCTIVE — Permanently delete Zabbix template dashboards. "
         "This action cannot be undone. Returns the deleted dashboard IDs."
     ),
-    annotations=_DELETE,
+    annotations=DELETE,
 )
 async def zabbix_template_dashboard_delete(
     dashboardids: Annotated[list[str], Field(description="IDs of template dashboards to delete.")],

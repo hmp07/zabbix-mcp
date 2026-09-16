@@ -5,14 +5,10 @@ from typing import Annotated, Any
 from pydantic import Field
 from ..client import ZabbixClient
 from ..app import mcp
-
-_READ_ONLY = {"readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": False}
-_WRITE = {"readOnlyHint": False, "destructiveHint": False, "idempotentHint": False, "openWorldHint": False}
-_WRITE_IDEMPOTENT = {"readOnlyHint": False, "destructiveHint": False, "idempotentHint": True, "openWorldHint": False}
-_DELETE = {"readOnlyHint": False, "destructiveHint": True, "idempotentHint": True, "openWorldHint": False}
+from ._annotations import DELETE, READ_ONLY, WRITE, WRITE_IDEMPOTENT
 
 
-@mcp.tool(name="zabbix_item_get", description="List Zabbix items (metrics). Filter by host, group, template, item key, or name.", annotations=_READ_ONLY)
+@mcp.tool(name="zabbix_item_get", description="List Zabbix items (metrics). Filter by host, group, template, item key, or name.", annotations=READ_ONLY)
 async def zabbix_item_get(
     itemids: Annotated[list[str] | None, Field(description="Return only items with these IDs.")] = None,
     hostids: Annotated[list[str] | None, Field(description="Return items belonging to these host IDs.")] = None,
@@ -38,7 +34,7 @@ async def zabbix_item_get(
         return await client.call("item.get", params)
 
 
-@mcp.tool(name="zabbix_item_create", description="Create a new Zabbix item on a host. type: 0=agent, 2=trapper, 7=external, 14=active agent, 17=calculated, 18=dependent, 19=HTTP, 20=SNMP. value_type: 0=float, 1=char, 2=log, 3=unsigned int, 4=text.", annotations=_WRITE)
+@mcp.tool(name="zabbix_item_create", description="Create a new Zabbix item on a host. type: 0=agent, 2=trapper, 7=external, 14=active agent, 17=calculated, 18=dependent, 19=HTTP, 20=SNMP. value_type: 0=float, 1=char, 2=log, 3=unsigned int, 4=text.", annotations=WRITE)
 async def zabbix_item_create(
     hostid: Annotated[str, Field(description="ID of the host.")],
     name: Annotated[str, Field(description="Item name.")],
@@ -66,7 +62,7 @@ async def zabbix_item_create(
         return await client.call("item.create", params)
 
 
-@mcp.tool(name="zabbix_item_update", description="Update an existing Zabbix item. Only provided fields are changed.", annotations=_WRITE_IDEMPOTENT)
+@mcp.tool(name="zabbix_item_update", description="Update an existing Zabbix item. Only provided fields are changed.", annotations=WRITE_IDEMPOTENT)
 async def zabbix_item_update(
     itemid: Annotated[str, Field(description="ID of the item to update.")],
     name: Annotated[str | None, Field(description="New name.")]=None,
@@ -97,7 +93,7 @@ async def zabbix_item_update(
         return await client.call("item.update", params)
 
 
-@mcp.tool(name="zabbix_item_delete", description="⚠️ DESTRUCTIVE — Permanently delete Zabbix items and all their history. Cannot be undone.", annotations=_DELETE)
+@mcp.tool(name="zabbix_item_delete", description="⚠️ DESTRUCTIVE — Permanently delete Zabbix items and all their history. Cannot be undone.", annotations=DELETE)
 async def zabbix_item_delete(itemids: Annotated[list[str], Field(description="IDs of items to delete.")]) -> dict[str, Any]:
     async with ZabbixClient() as client:
         return await client.call("item.delete", itemids)

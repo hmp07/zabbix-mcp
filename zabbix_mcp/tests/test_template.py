@@ -397,8 +397,8 @@ class TestZabbixTemplateDelete:
         assert mock.call.call_args[0][1] == ["1", "2"]
 
     async def test_destructive_annotation(self, zabbix_env: dict) -> None:
-        from zabbix_mcp.tools.template import _DELETE
-        assert _DELETE["destructiveHint"] is True
+        from zabbix_mcp.tools.template import DELETE
+        assert DELETE["destructiveHint"] is True
 
 
 class TestZabbixTemplategroupDelete:

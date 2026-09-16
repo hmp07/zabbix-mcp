@@ -5,12 +5,10 @@ from typing import Annotated, Any
 from pydantic import Field
 from ..client import ZabbixClient
 from ..app import mcp
-
-_READ_ONLY = {"readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": False}
-_WRITE = {"readOnlyHint": False, "destructiveHint": False, "idempotentHint": False, "openWorldHint": False}
+from ._annotations import DELETE, READ_ONLY, WRITE, WRITE_IDEMPOTENT
 
 
-@mcp.tool(name="zabbix_problem_get", description="List active Zabbix problems (open alerts). Filter by host, group, severity, or time range.", annotations=_READ_ONLY)
+@mcp.tool(name="zabbix_problem_get", description="List active Zabbix problems (open alerts). Filter by host, group, severity, or time range.", annotations=READ_ONLY)
 async def zabbix_problem_get(
     eventids: Annotated[list[str] | None, Field(description="Return only problems with these event IDs.")] = None,
     groupids: Annotated[list[str] | None, Field(description="Return problems on hosts in these group IDs.")] = None,
@@ -36,7 +34,7 @@ async def zabbix_problem_get(
         return await client.call("problem.get", params)
 
 
-@mcp.tool(name="zabbix_event_get", description="List Zabbix events (state changes). Unlike problems, events include resolved and historical entries.", annotations=_READ_ONLY)
+@mcp.tool(name="zabbix_event_get", description="List Zabbix events (state changes). Unlike problems, events include resolved and historical entries.", annotations=READ_ONLY)
 async def zabbix_event_get(
     eventids: Annotated[list[str] | None, Field(description="Return only events with these IDs.")] = None,
     groupids: Annotated[list[str] | None, Field(description="Return events on hosts in these group IDs.")] = None,
@@ -62,7 +60,7 @@ async def zabbix_event_get(
         return await client.call("event.get", params)
 
 
-@mcp.tool(name="zabbix_history_get", description="Retrieve raw historical values for Zabbix items. history type: 0=float, 1=string, 2=log, 3=unsigned int, 4=text.", annotations=_READ_ONLY)
+@mcp.tool(name="zabbix_history_get", description="Retrieve raw historical values for Zabbix items. history type: 0=float, 1=string, 2=log, 3=unsigned int, 4=text.", annotations=READ_ONLY)
 async def zabbix_history_get(
     itemids: Annotated[list[str], Field(description="Return history for these item IDs.")],
     history: Annotated[int, Field(description="Value type: 0=float, 1=string, 2=log, 3=unsigned int, 4=text.", ge=0, le=4)] = 3,
@@ -79,7 +77,7 @@ async def zabbix_history_get(
         return await client.call("history.get", params)
 
 
-@mcp.tool(name="zabbix_trend_get", description="Retrieve aggregated trend data (min/avg/max) for Zabbix items over hourly intervals. type: 0=float, 3=unsigned int.", annotations=_READ_ONLY)
+@mcp.tool(name="zabbix_trend_get", description="Retrieve aggregated trend data (min/avg/max) for Zabbix items over hourly intervals. type: 0=float, 3=unsigned int.", annotations=READ_ONLY)
 async def zabbix_trend_get(
     itemids: Annotated[list[str], Field(description="Return trends for these item IDs.")],
     type: Annotated[int, Field(description="0=float, 3=unsigned int.", ge=0, le=3)] = 3,
@@ -95,7 +93,7 @@ async def zabbix_trend_get(
         return await client.call("trend.get", params)
 
 
-@mcp.tool(name="zabbix_alert_get", description="List Zabbix alerts (notifications already sent — email, webhook, etc.). Use to diagnose why an alert was or was not sent.", annotations=_READ_ONLY)
+@mcp.tool(name="zabbix_alert_get", description="List Zabbix alerts (notifications already sent — email, webhook, etc.). Use to diagnose why an alert was or was not sent.", annotations=READ_ONLY)
 async def zabbix_alert_get(
     alertids: Annotated[list[str] | None, Field(description="Return only alerts with these IDs.")] = None,
     eventids: Annotated[list[str] | None, Field(description="Return alerts for these event IDs.")] = None,
@@ -119,7 +117,7 @@ async def zabbix_alert_get(
         return await client.call("alert.get", params)
 
 
-@mcp.tool(name="zabbix_event_acknowledge", description="Acknowledge, close, or add a message to Zabbix events. action bitmask: 1=close, 2=acknowledge, 4=add message, 8=change severity, 16=unacknowledge.", annotations=_WRITE)
+@mcp.tool(name="zabbix_event_acknowledge", description="Acknowledge, close, or add a message to Zabbix events. action bitmask: 1=close, 2=acknowledge, 4=add message, 8=change severity, 16=unacknowledge.", annotations=WRITE)
 async def zabbix_event_acknowledge(
     eventids: Annotated[list[str], Field(description="IDs of events to act on.")],
     action: Annotated[int, Field(description="Bitmask: 1=close, 2=acknowledge, 4=message, 8=change severity, 16=unacknowledge.", ge=1)],

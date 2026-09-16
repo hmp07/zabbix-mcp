@@ -8,13 +8,7 @@ from pydantic import Field
 
 from ..client import ZabbixClient
 from ..app import mcp
-
-_READ_ONLY = {
-    "readOnlyHint": True,
-    "destructiveHint": False,
-    "idempotentHint": True,
-    "openWorldHint": False,
-}
+from ._annotations import DELETE, READ_ONLY, WRITE, WRITE_IDEMPOTENT
 
 
 @mcp.tool(
@@ -23,7 +17,7 @@ _READ_ONLY = {
         "List Zabbix maintenance windows. Filter by ID, name, host, group, or active time range. "
         "Maintenances suppress alerting for hosts during scheduled downtime."
     ),
-    annotations=_READ_ONLY,
+    annotations=READ_ONLY,
 )
 async def zabbix_maintenance_get(
     maintenanceids: Annotated[list[str] | None, Field(description="Return only maintenances with these IDs.")] = None,
@@ -52,21 +46,6 @@ async def zabbix_maintenance_get(
         return await client.call("maintenance.get", params)
 
 
-_WRITE = {
-    "readOnlyHint": False,
-    "destructiveHint": False,
-    "idempotentHint": False,
-    "openWorldHint": False,
-}
-
-_WRITE_IDEMPOTENT = {
-    "readOnlyHint": False,
-    "destructiveHint": False,
-    "idempotentHint": True,
-    "openWorldHint": False,
-}
-
-
 @mcp.tool(
     name="zabbix_maintenance_create",
     description=(
@@ -75,7 +54,7 @@ _WRITE_IDEMPOTENT = {
         "timeperiods defines the maintenance schedule within the active window. "
         "Returns the new maintenance ID."
     ),
-    annotations=_WRITE,
+    annotations=WRITE,
 )
 async def zabbix_maintenance_create(
     name: Annotated[str, Field(description="Maintenance name.")],
@@ -108,7 +87,7 @@ async def zabbix_maintenance_create(
 @mcp.tool(
     name="zabbix_maintenance_update",
     description="Update an existing Zabbix maintenance window. Only provided fields are changed. Returns the updated maintenance ID.",
-    annotations=_WRITE_IDEMPOTENT,
+    annotations=WRITE_IDEMPOTENT,
 )
 async def zabbix_maintenance_update(
     maintenanceid: Annotated[str, Field(description="ID of the maintenance to update.")],
@@ -140,14 +119,6 @@ async def zabbix_maintenance_update(
         return await client.call("maintenance.update", params)
 
 
-_DELETE = {
-    "readOnlyHint": False,
-    "destructiveHint": True,
-    "idempotentHint": True,
-    "openWorldHint": False,
-}
-
-
 @mcp.tool(
     name="zabbix_maintenance_delete",
     description=(
@@ -155,7 +126,7 @@ _DELETE = {
         "Hosts currently in maintenance will immediately resume alerting. "
         "Returns the deleted maintenance IDs."
     ),
-    annotations=_DELETE,
+    annotations=DELETE,
 )
 async def zabbix_maintenance_delete(
     maintenanceids: Annotated[list[str], Field(description="IDs of maintenance windows to delete.")],

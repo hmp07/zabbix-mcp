@@ -5,14 +5,10 @@ from typing import Annotated, Any
 from pydantic import Field
 from ..client import ZabbixClient
 from ..app import mcp
-
-_READ_ONLY = {"readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": False}
-_WRITE = {"readOnlyHint": False, "destructiveHint": False, "idempotentHint": False, "openWorldHint": False}
-_WRITE_IDEMPOTENT = {"readOnlyHint": False, "destructiveHint": False, "idempotentHint": True, "openWorldHint": False}
-_DELETE = {"readOnlyHint": False, "destructiveHint": True, "idempotentHint": True, "openWorldHint": False}
+from ._annotations import DELETE, READ_ONLY, WRITE, WRITE_IDEMPOTENT
 
 
-@mcp.tool(name="zabbix_hostgroup_get", description="List Zabbix host groups. Filter by group ID, name, or by hosts they contain.", annotations=_READ_ONLY)
+@mcp.tool(name="zabbix_hostgroup_get", description="List Zabbix host groups. Filter by group ID, name, or by hosts they contain.", annotations=READ_ONLY)
 async def zabbix_hostgroup_get(
     groupids: Annotated[list[str] | None, Field(description="Return only groups with these IDs.")] = None,
     hostids: Annotated[list[str] | None, Field(description="Return groups containing these host IDs.")] = None,
@@ -32,13 +28,13 @@ async def zabbix_hostgroup_get(
         return await client.call("hostgroup.get", params)
 
 
-@mcp.tool(name="zabbix_hostgroup_create", description="Create a new Zabbix host group.", annotations=_WRITE)
+@mcp.tool(name="zabbix_hostgroup_create", description="Create a new Zabbix host group.", annotations=WRITE)
 async def zabbix_hostgroup_create(name: Annotated[str, Field(description="Name of the new host group.")]) -> dict[str, Any]:
     async with ZabbixClient() as client:
         return await client.call("hostgroup.create", {"name": name})
 
 
-@mcp.tool(name="zabbix_hostgroup_update", description="Rename an existing Zabbix host group.", annotations=_WRITE_IDEMPOTENT)
+@mcp.tool(name="zabbix_hostgroup_update", description="Rename an existing Zabbix host group.", annotations=WRITE_IDEMPOTENT)
 async def zabbix_hostgroup_update(
     groupid: Annotated[str, Field(description="ID of the host group to update.")],
     name: Annotated[str, Field(description="New name.")],
@@ -47,7 +43,7 @@ async def zabbix_hostgroup_update(
         return await client.call("hostgroup.update", {"groupid": groupid, "name": name})
 
 
-@mcp.tool(name="zabbix_hostgroup_delete", description="⚠️ DESTRUCTIVE — Permanently delete Zabbix host groups. Groups containing hosts cannot be deleted.", annotations=_DELETE)
+@mcp.tool(name="zabbix_hostgroup_delete", description="⚠️ DESTRUCTIVE — Permanently delete Zabbix host groups. Groups containing hosts cannot be deleted.", annotations=DELETE)
 async def zabbix_hostgroup_delete(groupids: Annotated[list[str], Field(description="IDs of host groups to delete.")]) -> dict[str, Any]:
     async with ZabbixClient() as client:
         return await client.call("hostgroup.delete", groupids)

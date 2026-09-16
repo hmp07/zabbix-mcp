@@ -8,27 +8,7 @@ from pydantic import Field
 
 from ..client import ZabbixClient
 from ..app import mcp
-
-_READ_ONLY = {
-    "readOnlyHint": True,
-    "destructiveHint": False,
-    "idempotentHint": True,
-    "openWorldHint": False,
-}
-
-_WRITE = {
-    "readOnlyHint": False,
-    "destructiveHint": False,
-    "idempotentHint": False,
-    "openWorldHint": False,
-}
-
-_WRITE_IDEMPOTENT = {
-    "readOnlyHint": False,
-    "destructiveHint": False,
-    "idempotentHint": True,
-    "openWorldHint": False,
-}
+from ._annotations import DELETE, READ_ONLY, WRITE, WRITE_IDEMPOTENT
 
 
 @mcp.tool(
@@ -39,7 +19,7 @@ _WRITE_IDEMPOTENT = {
         "(disaster, high, average, warning, info, not_classified). "
         "Useful for a quick health overview without needing two separate tool calls."
     ),
-    annotations=_READ_ONLY,
+    annotations=READ_ONLY,
 )
 async def zabbix_host_problems_summary(
     hostids: Annotated[list[str] | None, Field(description="Summarise problems for these host IDs. Omit to summarise all hosts with active problems.")] = None,
@@ -127,7 +107,7 @@ async def zabbix_host_problems_summary(
         "one discovery rule + one item prototype + one trigger prototype. "
         "Returns the IDs of all created objects."
     ),
-    annotations=_WRITE,
+    annotations=WRITE,
 )
 async def zabbix_lld_scaffold(
     hostid: Annotated[str, Field(description="ID of the host to add the LLD setup to.")],
@@ -200,7 +180,7 @@ async def zabbix_lld_scaffold(
         "(does not unlink existing templates). "
         "Returns the updated host IDs."
     ),
-    annotations=_WRITE_IDEMPOTENT,
+    annotations=WRITE_IDEMPOTENT,
 )
 async def zabbix_template_link(
     hostids: Annotated[list[str], Field(description="IDs of hosts to link templates to.")],

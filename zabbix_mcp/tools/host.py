@@ -8,13 +8,7 @@ from pydantic import Field
 
 from ..client import ZabbixClient
 from ..app import mcp
-
-_READ_ONLY = {
-    "readOnlyHint": True,
-    "destructiveHint": False,
-    "idempotentHint": True,
-    "openWorldHint": False,
-}
+from ._annotations import DELETE, READ_ONLY, WRITE, WRITE_IDEMPOTENT
 
 
 @mcp.tool(
@@ -23,7 +17,7 @@ _READ_ONLY = {
         "Find and list Zabbix hosts. Filter by name, group, status, or linked template. "
         "Returns monitored and unmonitored hosts matching the given criteria."
     ),
-    annotations=_READ_ONLY,
+    annotations=READ_ONLY,
 )
 async def zabbix_host_get(
     hostids: Annotated[list[str] | None, Field(description="Return only hosts with these IDs.")] = None,
@@ -55,7 +49,7 @@ async def zabbix_host_get(
         "List network interfaces for one or more Zabbix hosts. "
         "Returns IP, DNS, port, and interface type (Agent/SNMP/IPMI/JMX)."
     ),
-    annotations=_READ_ONLY,
+    annotations=READ_ONLY,
 )
 async def zabbix_host_interface_get(
     hostids: Annotated[list[str] | None, Field(description="Return interfaces for these host IDs.")] = None,
@@ -77,22 +71,7 @@ async def zabbix_host_interface_get(
         return await client.call("hostinterface.get", params)
 
 
-_WRITE = {
-    "readOnlyHint": False,
-    "destructiveHint": False,
-    "idempotentHint": False,
-    "openWorldHint": False,
-}
-
-_WRITE_IDEMPOTENT = {
-    "readOnlyHint": False,
-    "destructiveHint": False,
-    "idempotentHint": True,
-    "openWorldHint": False,
-}
-
-
-@mcp.tool(name="zabbix_host_create", description="Create a new Zabbix host. Requires a hostname, at least one host group, and typically a network interface. Returns the new host ID.", annotations=_WRITE)
+@mcp.tool(name="zabbix_host_create", description="Create a new Zabbix host. Requires a hostname, at least one host group, and typically a network interface. Returns the new host ID.", annotations=WRITE)
 async def zabbix_host_create(
     host: Annotated[str, Field(description="Technical hostname (unique).")],
     groups: Annotated[list[dict[str, Any]], Field(description="Host groups to assign. Example: [{'groupid': '2'}].")],
@@ -115,7 +94,7 @@ async def zabbix_host_create(
         return await client.call("host.create", params)
 
 
-@mcp.tool(name="zabbix_host_update", description="Update an existing Zabbix host. Only the fields you provide are changed.", annotations=_WRITE_IDEMPOTENT)
+@mcp.tool(name="zabbix_host_update", description="Update an existing Zabbix host. Only the fields you provide are changed.", annotations=WRITE_IDEMPOTENT)
 async def zabbix_host_update(
     hostid: Annotated[str, Field(description="ID of the host to update.")],
     host: Annotated[str | None, Field(description="New technical hostname.")] = None,
@@ -140,7 +119,7 @@ async def zabbix_host_update(
         return await client.call("host.update", params)
 
 
-@mcp.tool(name="zabbix_host_interface_create", description="Add a network interface to a Zabbix host.", annotations=_WRITE)
+@mcp.tool(name="zabbix_host_interface_create", description="Add a network interface to a Zabbix host.", annotations=WRITE)
 async def zabbix_host_interface_create(
     hostid: Annotated[str, Field(description="ID of the host.")],
     type: Annotated[int, Field(description="1=Agent, 2=SNMP, 3=IPMI, 4=JMX.", ge=1, le=4)],
@@ -157,7 +136,7 @@ async def zabbix_host_interface_create(
         return await client.call("hostinterface.create", params)
 
 
-@mcp.tool(name="zabbix_host_interface_update", description="Update an existing Zabbix host interface.", annotations=_WRITE_IDEMPOTENT)
+@mcp.tool(name="zabbix_host_interface_update", description="Update an existing Zabbix host interface.", annotations=WRITE_IDEMPOTENT)
 async def zabbix_host_interface_update(
     interfaceid: Annotated[str, Field(description="ID of the interface to update.")],
     ip: Annotated[str | None, Field(description="New IP address.")] = None,
@@ -178,16 +157,13 @@ async def zabbix_host_interface_update(
         return await client.call("hostinterface.update", params)
 
 
-_DELETE = {"readOnlyHint": False, "destructiveHint": True, "idempotentHint": True, "openWorldHint": False}
-
-
-@mcp.tool(name="zabbix_host_delete", description="⚠️ DESTRUCTIVE — Permanently delete Zabbix hosts and all their items, triggers, graphs, and history. Cannot be undone.", annotations=_DELETE)
+@mcp.tool(name="zabbix_host_delete", description="⚠️ DESTRUCTIVE — Permanently delete Zabbix hosts and all their items, triggers, graphs, and history. Cannot be undone.", annotations=DELETE)
 async def zabbix_host_delete(hostids: Annotated[list[str], Field(description="IDs of hosts to delete.")]) -> dict[str, Any]:
     async with ZabbixClient() as client:
         return await client.call("host.delete", hostids)
 
 
-@mcp.tool(name="zabbix_host_interface_delete", description="⚠️ DESTRUCTIVE — Permanently delete host interfaces. Cannot be undone.", annotations=_DELETE)
+@mcp.tool(name="zabbix_host_interface_delete", description="⚠️ DESTRUCTIVE — Permanently delete host interfaces. Cannot be undone.", annotations=DELETE)
 async def zabbix_host_interface_delete(interfaceids: Annotated[list[str], Field(description="IDs of interfaces to delete.")]) -> dict[str, Any]:
     async with ZabbixClient() as client:
         return await client.call("hostinterface.delete", interfaceids)

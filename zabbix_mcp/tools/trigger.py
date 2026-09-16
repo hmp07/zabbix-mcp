@@ -5,14 +5,10 @@ from typing import Annotated, Any
 from pydantic import Field
 from ..client import ZabbixClient
 from ..app import mcp
-
-_READ_ONLY = {"readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": False}
-_WRITE = {"readOnlyHint": False, "destructiveHint": False, "idempotentHint": False, "openWorldHint": False}
-_WRITE_IDEMPOTENT = {"readOnlyHint": False, "destructiveHint": False, "idempotentHint": True, "openWorldHint": False}
-_DELETE = {"readOnlyHint": False, "destructiveHint": True, "idempotentHint": True, "openWorldHint": False}
+from ._annotations import DELETE, READ_ONLY, WRITE, WRITE_IDEMPOTENT
 
 
-@mcp.tool(name="zabbix_trigger_get", description="List Zabbix triggers. Filter by host, group, status, severity, or current value. Use value=1 to see only triggers in PROBLEM state.", annotations=_READ_ONLY)
+@mcp.tool(name="zabbix_trigger_get", description="List Zabbix triggers. Filter by host, group, status, severity, or current value. Use value=1 to see only triggers in PROBLEM state.", annotations=READ_ONLY)
 async def zabbix_trigger_get(
     triggerids: Annotated[list[str] | None, Field(description="Return only triggers with these IDs.")] = None,
     hostids: Annotated[list[str] | None, Field(description="Return triggers for these host IDs.")] = None,
@@ -42,7 +38,7 @@ async def zabbix_trigger_get(
         return await client.call("trigger.get", params)
 
 
-@mcp.tool(name="zabbix_trigger_create", description="Create a new Zabbix trigger. Expression must use Zabbix trigger syntax, e.g. 'last(/host/system.cpu.util)>90'.", annotations=_WRITE)
+@mcp.tool(name="zabbix_trigger_create", description="Create a new Zabbix trigger. Expression must use Zabbix trigger syntax, e.g. 'last(/host/system.cpu.util)>90'.", annotations=WRITE)
 async def zabbix_trigger_create(
     description: Annotated[str, Field(description="Trigger name.")],
     expression: Annotated[str, Field(description="Trigger expression.")],
@@ -66,7 +62,7 @@ async def zabbix_trigger_create(
         return await client.call("trigger.create", params)
 
 
-@mcp.tool(name="zabbix_trigger_update", description="Update an existing Zabbix trigger. Only provided fields are changed.", annotations=_WRITE_IDEMPOTENT)
+@mcp.tool(name="zabbix_trigger_update", description="Update an existing Zabbix trigger. Only provided fields are changed.", annotations=WRITE_IDEMPOTENT)
 async def zabbix_trigger_update(
     triggerid: Annotated[str, Field(description="ID of the trigger to update.")],
     description: Annotated[str | None, Field(description="New description.")]=None,
@@ -89,7 +85,7 @@ async def zabbix_trigger_update(
         return await client.call("trigger.update", params)
 
 
-@mcp.tool(name="zabbix_trigger_delete", description="⚠️ DESTRUCTIVE — Permanently delete Zabbix triggers. Cannot be undone.", annotations=_DELETE)
+@mcp.tool(name="zabbix_trigger_delete", description="⚠️ DESTRUCTIVE — Permanently delete Zabbix triggers. Cannot be undone.", annotations=DELETE)
 async def zabbix_trigger_delete(triggerids: Annotated[list[str], Field(description="IDs of triggers to delete.")]) -> dict[str, Any]:
     async with ZabbixClient() as client:
         return await client.call("trigger.delete", triggerids)
