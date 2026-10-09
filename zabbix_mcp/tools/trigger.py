@@ -6,6 +6,7 @@ from pydantic import Field
 from ..client import ZabbixClient
 from ..app import mcp
 from ._annotations import DELETE, READ_ONLY, WRITE, WRITE_IDEMPOTENT
+from ._params import as_int_flag, compact, filter_params, search_params
 
 
 @mcp.tool(name="zabbix_trigger_get", description="List Zabbix triggers. Filter by host, group, status, severity, or current value. Use value=1 to see only triggers in PROBLEM state.", annotations=READ_ONLY)
@@ -22,18 +23,17 @@ async def zabbix_trigger_get(
     limit: Annotated[int, Field(description="Maximum number of results.", ge=1, le=1000)] = 100,
     output: Annotated[list[str], Field(description="Fields to return.")] = ["triggerid", "description", "expression", "priority", "status", "value"],
 ) -> list[dict[str, Any]]:
-    params: dict[str, Any] = {"output": output, "limit": limit}
-    if triggerids is not None: params["triggerids"] = triggerids
-    if hostids is not None: params["hostids"] = hostids
-    if groupids is not None: params["groupids"] = groupids
-    if templateids is not None: params["templateids"] = templateids
-    filter_: dict[str, Any] = {}
-    if status is not None: filter_["status"] = status
-    if value is not None: filter_["value"] = value
-    if priority is not None: filter_["priority"] = priority
-    if filter_: params["filter"] = filter_
-    if only_true is not None: params["only_true"] = 1 if only_true else 0
-    if name is not None: params["search"] = {"description": name}
+    params = compact({
+        "output": output,
+        "limit": limit,
+        "triggerids": triggerids,
+        "hostids": hostids,
+        "groupids": groupids,
+        "templateids": templateids,
+        "only_true": as_int_flag(only_true),
+    })
+    params.update(filter_params(status=status, value=value, priority=priority))
+    params.update(search_params(description=name))
     async with ZabbixClient() as client:
         return await client.call("trigger.get", params)
 
@@ -51,13 +51,18 @@ async def zabbix_trigger_create(
     recovery_mode: Annotated[int | None, Field(description="0=expression, 1=recovery expression, 2=none.", ge=0, le=2)]=None,
     recovery_expression: Annotated[str | None, Field(description="Recovery expression.")]=None,
 ) -> dict[str, Any]:
-    params: dict[str, Any] = {"description": description, "expression": expression, "priority": priority, "status": status}
-    if tags is not None: params["tags"] = tags
-    if dependencies is not None: params["dependencies"] = dependencies
-    if comments is not None: params["comments"] = comments
-    if url is not None: params["url"] = url
-    if recovery_mode is not None: params["recovery_mode"] = recovery_mode
-    if recovery_expression is not None: params["recovery_expression"] = recovery_expression
+    params = compact({
+        "description": description,
+        "expression": expression,
+        "priority": priority,
+        "status": status,
+        "tags": tags,
+        "dependencies": dependencies,
+        "comments": comments,
+        "url": url,
+        "recovery_mode": recovery_mode,
+        "recovery_expression": recovery_expression,
+    })
     async with ZabbixClient() as client:
         return await client.call("trigger.create", params)
 
@@ -73,14 +78,16 @@ async def zabbix_trigger_update(
     comments: Annotated[str | None, Field(description="New description.")]=None,
     url: Annotated[str | None, Field(description="New URL.")]=None,
 ) -> dict[str, Any]:
-    params: dict[str, Any] = {"triggerid": triggerid}
-    if description is not None: params["description"] = description
-    if expression is not None: params["expression"] = expression
-    if priority is not None: params["priority"] = priority
-    if status is not None: params["status"] = status
-    if tags is not None: params["tags"] = tags
-    if comments is not None: params["comments"] = comments
-    if url is not None: params["url"] = url
+    params = compact({
+        "triggerid": triggerid,
+        "description": description,
+        "expression": expression,
+        "priority": priority,
+        "status": status,
+        "tags": tags,
+        "comments": comments,
+        "url": url,
+    })
     async with ZabbixClient() as client:
         return await client.call("trigger.update", params)
 

@@ -1,14 +1,12 @@
 """Zabbix MCP tools — Templates, Template Groups, Value Maps, Reports."""
 
 from __future__ import annotations
-
 from typing import Annotated, Any
-
 from pydantic import Field
-
 from ..client import ZabbixClient
 from ..app import mcp
 from ._annotations import DELETE, READ_ONLY, WRITE, WRITE_IDEMPOTENT
+from ._params import compact, search_params
 
 
 @mcp.tool(
@@ -30,15 +28,14 @@ async def zabbix_template_get(
     ],
 ) -> list[dict[str, Any]]:
     """Return Zabbix templates matching the given filters."""
-    params: dict[str, Any] = {"output": output, "limit": limit}
-    if templateids is not None:
-        params["templateids"] = templateids
-    if groupids is not None:
-        params["groupids"] = groupids
-    if hostids is not None:
-        params["hostids"] = hostids
-    if name is not None:
-        params["search"] = {"name": name}
+    params = compact({
+        "output": output,
+        "limit": limit,
+        "templateids": templateids,
+        "groupids": groupids,
+        "hostids": hostids,
+    })
+    params.update(search_params(name=name))
     async with ZabbixClient() as client:
         return await client.call("template.get", params)
 
@@ -56,13 +53,13 @@ async def zabbix_templategroup_get(
     output: Annotated[list[str], Field(description="Fields to return.")] = ["groupid", "name"],
 ) -> list[dict[str, Any]]:
     """Return Zabbix template groups."""
-    params: dict[str, Any] = {"output": output, "limit": limit}
-    if groupids is not None:
-        params["groupids"] = groupids
-    if templateids is not None:
-        params["templateids"] = templateids
-    if name is not None:
-        params["search"] = {"name": name}
+    params = compact({
+        "output": output,
+        "limit": limit,
+        "groupids": groupids,
+        "templateids": templateids,
+    })
+    params.update(search_params(name=name))
     async with ZabbixClient() as client:
         return await client.call("templategroup.get", params)
 
@@ -86,15 +83,14 @@ async def zabbix_valuemap_get(
     ],
 ) -> list[dict[str, Any]]:
     """Return Zabbix value maps."""
-    params: dict[str, Any] = {"output": output, "limit": limit}
-    if valuemapids is not None:
-        params["valuemapids"] = valuemapids
-    if hostids is not None:
-        params["hostids"] = hostids
-    if templateids is not None:
-        params["templateids"] = templateids
-    if name is not None:
-        params["search"] = {"name": name}
+    params = compact({
+        "output": output,
+        "limit": limit,
+        "valuemapids": valuemapids,
+        "hostids": hostids,
+        "templateids": templateids,
+    })
+    params.update(search_params(name=name))
     async with ZabbixClient() as client:
         return await client.call("valuemap.get", params)
 
@@ -114,13 +110,13 @@ async def zabbix_report_get(
     ],
 ) -> list[dict[str, Any]]:
     """Return Zabbix scheduled reports."""
-    params: dict[str, Any] = {"output": output, "limit": limit}
-    if reportids is not None:
-        params["reportids"] = reportids
-    if userid is not None:
-        params["userid"] = userid
-    if name is not None:
-        params["search"] = {"name": name}
+    params = compact({
+        "output": output,
+        "limit": limit,
+        "reportids": reportids,
+        "userid": userid,
+    })
+    params.update(search_params(name=name))
     async with ZabbixClient() as client:
         return await client.call("report.get", params)
 
@@ -144,17 +140,15 @@ async def zabbix_template_create(
     macros: Annotated[list[dict[str, Any]] | None, Field(description="Template user macros.")] = None,
 ) -> dict[str, Any]:
     """Create a Zabbix template."""
-    params: dict[str, Any] = {"host": host, "groups": groups}
-    if name is not None:
-        params["name"] = name
-    if description is not None:
-        params["description"] = description
-    if templates is not None:
-        params["templates"] = templates
-    if tags is not None:
-        params["tags"] = tags
-    if macros is not None:
-        params["macros"] = macros
+    params = compact({
+        "host": host,
+        "groups": groups,
+        "name": name,
+        "description": description,
+        "templates": templates,
+        "tags": tags,
+        "macros": macros,
+    })
     async with ZabbixClient() as client:
         return await client.call("template.create", params)
 
@@ -175,21 +169,16 @@ async def zabbix_template_update(
     macros: Annotated[list[dict[str, Any]] | None, Field(description="Replace user macros.")] = None,
 ) -> dict[str, Any]:
     """Update a Zabbix template."""
-    params: dict[str, Any] = {"templateid": templateid}
-    if host is not None:
-        params["host"] = host
-    if name is not None:
-        params["name"] = name
-    if description is not None:
-        params["description"] = description
-    if groups is not None:
-        params["groups"] = groups
-    if templates is not None:
-        params["templates"] = templates
-    if tags is not None:
-        params["tags"] = tags
-    if macros is not None:
-        params["macros"] = macros
+    params = compact({
+        "templateid": templateid,
+        "host": host,
+        "name": name,
+        "description": description,
+        "groups": groups,
+        "templates": templates,
+        "tags": tags,
+        "macros": macros,
+    })
     async with ZabbixClient() as client:
         return await client.call("template.update", params)
 
@@ -236,11 +225,7 @@ async def zabbix_valuemap_create(
     mappings: Annotated[list[dict[str, Any]], Field(description="Mapping rules.")],
 ) -> dict[str, Any]:
     """Create a Zabbix value map."""
-    params: dict[str, Any] = {
-        "hostid": hostid,
-        "name": name,
-        "mappings": mappings,
-    }
+    params = {"hostid": hostid, "name": name, "mappings": mappings}
     async with ZabbixClient() as client:
         return await client.call("valuemap.create", params)
 
@@ -256,11 +241,11 @@ async def zabbix_valuemap_update(
     mappings: Annotated[list[dict[str, Any]] | None, Field(description="Replace mapping rules.")] = None,
 ) -> dict[str, Any]:
     """Update a Zabbix value map."""
-    params: dict[str, Any] = {"valuemapid": valuemapid}
-    if name is not None:
-        params["name"] = name
-    if mappings is not None:
-        params["mappings"] = mappings
+    params = compact({
+        "valuemapid": valuemapid,
+        "name": name,
+        "mappings": mappings,
+    })
     async with ZabbixClient() as client:
         return await client.call("valuemap.update", params)
 
@@ -288,24 +273,19 @@ async def zabbix_report_create(
     description: Annotated[str | None, Field(description="Report description.")] = None,
 ) -> dict[str, Any]:
     """Create a Zabbix scheduled report."""
-    params: dict[str, Any] = {
+    params = compact({
         "name": name,
         "dashboardid": dashboardid,
         "userid": userid,
         "period": period,
         "cycle": cycle,
         "status": status,
-    }
-    if subject is not None:
-        params["subject"] = subject
-    if message is not None:
-        params["message"] = message
-    if users is not None:
-        params["users"] = users
-    if usergroups is not None:
-        params["usergroups"] = usergroups
-    if description is not None:
-        params["description"] = description
+        "subject": subject,
+        "message": message,
+        "users": users,
+        "usergroups": usergroups,
+        "description": description,
+    })
     async with ZabbixClient() as client:
         return await client.call("report.create", params)
 
@@ -328,25 +308,18 @@ async def zabbix_report_update(
     description: Annotated[str | None, Field(description="New description.")] = None,
 ) -> dict[str, Any]:
     """Update a Zabbix scheduled report."""
-    params: dict[str, Any] = {"reportid": reportid}
-    if name is not None:
-        params["name"] = name
-    if dashboardid is not None:
-        params["dashboardid"] = dashboardid
-    if period is not None:
-        params["period"] = period
-    if status is not None:
-        params["status"] = status
-    if subject is not None:
-        params["subject"] = subject
-    if message is not None:
-        params["message"] = message
-    if users is not None:
-        params["users"] = users
-    if usergroups is not None:
-        params["usergroups"] = usergroups
-    if description is not None:
-        params["description"] = description
+    params = compact({
+        "reportid": reportid,
+        "name": name,
+        "dashboardid": dashboardid,
+        "period": period,
+        "status": status,
+        "subject": subject,
+        "message": message,
+        "users": users,
+        "usergroups": usergroups,
+        "description": description,
+    })
     async with ZabbixClient() as client:
         return await client.call("report.update", params)
 

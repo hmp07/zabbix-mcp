@@ -1,14 +1,12 @@
 """Zabbix MCP tools — Maintenances (read, write, delete)."""
 
 from __future__ import annotations
-
 from typing import Annotated, Any
-
 from pydantic import Field
-
 from ..client import ZabbixClient
 from ..app import mcp
 from ._annotations import DELETE, READ_ONLY, WRITE, WRITE_IDEMPOTENT
+from ._params import compact, search_params
 
 
 @mcp.tool(
@@ -31,17 +29,15 @@ async def zabbix_maintenance_get(
     ],
 ) -> list[dict[str, Any]]:
     """Return Zabbix maintenance windows matching the given filters."""
-    params: dict[str, Any] = {"output": output, "limit": limit}
-    if maintenanceids is not None:
-        params["maintenanceids"] = maintenanceids
-    if groupids is not None:
-        params["groupids"] = groupids
-    if hostids is not None:
-        params["hostids"] = hostids
-    if name is not None:
-        params["search"] = {"name": name}
-    if active_till is not None:
-        params["active_till"] = active_till
+    params = compact({
+        "output": output,
+        "limit": limit,
+        "maintenanceids": maintenanceids,
+        "groupids": groupids,
+        "hostids": hostids,
+        "active_till": active_till,
+    })
+    params.update(search_params(name=name))
     async with ZabbixClient() as client:
         return await client.call("maintenance.get", params)
 
@@ -67,19 +63,16 @@ async def zabbix_maintenance_create(
     description: Annotated[str | None, Field(description="Maintenance description.")] = None,
 ) -> dict[str, Any]:
     """Create a Zabbix maintenance window."""
-    params: dict[str, Any] = {
+    params = compact({
         "name": name,
         "active_since": active_since,
         "active_till": active_till,
         "timeperiods": timeperiods,
         "maintenance_type": maintenance_type,
-    }
-    if groupids is not None:
-        params["groupids"] = groupids
-    if hostids is not None:
-        params["hostids"] = hostids
-    if description is not None:
-        params["description"] = description
+        "groupids": groupids,
+        "hostids": hostids,
+        "description": description,
+    })
     async with ZabbixClient() as client:
         return await client.call("maintenance.create", params)
 
@@ -100,21 +93,16 @@ async def zabbix_maintenance_update(
     description: Annotated[str | None, Field(description="New description.")] = None,
 ) -> dict[str, Any]:
     """Update a Zabbix maintenance window."""
-    params: dict[str, Any] = {"maintenanceid": maintenanceid}
-    if name is not None:
-        params["name"] = name
-    if active_since is not None:
-        params["active_since"] = active_since
-    if active_till is not None:
-        params["active_till"] = active_till
-    if timeperiods is not None:
-        params["timeperiods"] = timeperiods
-    if groupids is not None:
-        params["groupids"] = groupids
-    if hostids is not None:
-        params["hostids"] = hostids
-    if description is not None:
-        params["description"] = description
+    params = compact({
+        "maintenanceid": maintenanceid,
+        "name": name,
+        "active_since": active_since,
+        "active_till": active_till,
+        "timeperiods": timeperiods,
+        "groupids": groupids,
+        "hostids": hostids,
+        "description": description,
+    })
     async with ZabbixClient() as client:
         return await client.call("maintenance.update", params)
 

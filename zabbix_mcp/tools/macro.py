@@ -1,14 +1,12 @@
 """Zabbix MCP tools — User Macros (read, write, delete)."""
 
 from __future__ import annotations
-
 from typing import Annotated, Any
-
 from pydantic import Field
-
 from ..client import ZabbixClient
 from ..app import mcp
 from ._annotations import DELETE, READ_ONLY, WRITE, WRITE_IDEMPOTENT
+from ._params import compact, search_params
 
 
 @mcp.tool(
@@ -32,19 +30,15 @@ async def zabbix_usermacro_get(
     ],
 ) -> list[dict[str, Any]]:
     """Return Zabbix user macros matching the given filters."""
-    params: dict[str, Any] = {
+    params = compact({
         "output": output,
         "limit": limit,
         "globalmacro": globalmacro,
-    }
-    if hostmacroids is not None:
-        params["hostmacroids"] = hostmacroids
-    if hostids is not None:
-        params["hostids"] = hostids
-    if templateids is not None:
-        params["templateids"] = templateids
-    if macro is not None:
-        params["search"] = {"macro": macro}
+        "hostmacroids": hostmacroids,
+        "hostids": hostids,
+        "templateids": templateids,
+    })
+    params.update(search_params(macro=macro))
     async with ZabbixClient() as client:
         return await client.call("usermacro.get", params)
 
@@ -67,14 +61,13 @@ async def zabbix_usermacro_create(
     description: Annotated[str | None, Field(description="Macro description.")] = None,
 ) -> dict[str, Any]:
     """Create a user macro on a host or template."""
-    params: dict[str, Any] = {
+    params = compact({
         "hostid": hostid,
         "macro": macro,
         "value": value,
         "type": type,
-    }
-    if description is not None:
-        params["description"] = description
+        "description": description,
+    })
     async with ZabbixClient() as client:
         return await client.call("usermacro.create", params)
 
@@ -91,13 +84,12 @@ async def zabbix_usermacro_update(
     description: Annotated[str | None, Field(description="New description.")] = None,
 ) -> dict[str, Any]:
     """Update a user macro."""
-    params: dict[str, Any] = {"hostmacroid": hostmacroid}
-    if value is not None:
-        params["value"] = value
-    if type is not None:
-        params["type"] = type
-    if description is not None:
-        params["description"] = description
+    params = compact({
+        "hostmacroid": hostmacroid,
+        "value": value,
+        "type": type,
+        "description": description,
+    })
     async with ZabbixClient() as client:
         return await client.call("usermacro.update", params)
 

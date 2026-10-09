@@ -6,6 +6,7 @@ from pydantic import Field
 from ..client import ZabbixClient
 from ..app import mcp
 from ._annotations import DELETE, READ_ONLY, WRITE, WRITE_IDEMPOTENT
+from ._params import as_int_flag, compact, search_params
 
 
 @mcp.tool(name="zabbix_hostgroup_get", description="List Zabbix host groups. Filter by group ID, name, or by hosts they contain.", annotations=READ_ONLY)
@@ -18,12 +19,15 @@ async def zabbix_hostgroup_get(
     limit: Annotated[int, Field(description="Maximum number of results.", ge=1, le=1000)] = 100,
     output: Annotated[list[str], Field(description="Fields to return.")] = ["groupid", "name"],
 ) -> list[dict[str, Any]]:
-    params: dict[str, Any] = {"output": output, "limit": limit}
-    if groupids is not None: params["groupids"] = groupids
-    if hostids is not None: params["hostids"] = hostids
-    if templateids is not None: params["templateids"] = templateids
-    if name is not None: params["search"] = {"name": name}
-    if real_hosts is not None: params["real_hosts"] = 1 if real_hosts else 0
+    params = compact({
+        "output": output,
+        "limit": limit,
+        "groupids": groupids,
+        "hostids": hostids,
+        "templateids": templateids,
+        "real_hosts": as_int_flag(real_hosts),
+    })
+    params.update(search_params(name=name))
     async with ZabbixClient() as client:
         return await client.call("hostgroup.get", params)
 

@@ -6,6 +6,7 @@ from pydantic import Field
 from ..client import ZabbixClient
 from ..app import mcp
 from ._annotations import DELETE, READ_ONLY, WRITE, WRITE_IDEMPOTENT
+from ._params import compact, search_params
 
 
 @mcp.tool(name="zabbix_graph_get", description="List Zabbix graphs. Filter by host, group, template, or name.", annotations=READ_ONLY)
@@ -18,12 +19,15 @@ async def zabbix_graph_get(
     limit: Annotated[int, Field(description="Maximum number of results.", ge=1, le=1000)] = 100,
     output: Annotated[list[str], Field(description="Fields to return.")] = ["graphid", "name", "width", "height", "type"],
 ) -> list[dict[str, Any]]:
-    params: dict[str, Any] = {"output": output, "limit": limit}
-    if graphids is not None: params["graphids"] = graphids
-    if hostids is not None: params["hostids"] = hostids
-    if groupids is not None: params["groupids"] = groupids
-    if templateids is not None: params["templateids"] = templateids
-    if name is not None: params["search"] = {"name": name}
+    params = compact({
+        "output": output,
+        "limit": limit,
+        "graphids": graphids,
+        "hostids": hostids,
+        "groupids": groupids,
+        "templateids": templateids,
+    })
+    params.update(search_params(name=name))
     async with ZabbixClient() as client:
         return await client.call("graph.get", params)
 
@@ -35,9 +39,12 @@ async def zabbix_graph_item_get(
     limit: Annotated[int, Field(description="Maximum number of results.", ge=1, le=1000)] = 100,
     output: Annotated[list[str], Field(description="Fields to return.")] = ["gitemid", "graphid", "itemid", "color", "type", "yaxisside"],
 ) -> list[dict[str, Any]]:
-    params: dict[str, Any] = {"output": output, "limit": limit}
-    if graphids is not None: params["graphids"] = graphids
-    if itemids is not None: params["itemids"] = itemids
+    params = compact({
+        "output": output,
+        "limit": limit,
+        "graphids": graphids,
+        "itemids": itemids,
+    })
     async with ZabbixClient() as client:
         return await client.call("graphitem.get", params)
 
@@ -51,8 +58,9 @@ async def zabbix_graph_create(
     type: Annotated[int, Field(description="0=normal, 1=stacked, 2=pie, 3=exploded.", ge=0, le=3)] = 0,
     show_legend: Annotated[int, Field(description="1=show, 0=hide.", ge=0, le=1)] = 1,
 ) -> dict[str, Any]:
+    params = {"name": name, "gitems": gitems, "width": width, "height": height, "graphtype": type, "show_legend": show_legend}
     async with ZabbixClient() as client:
-        return await client.call("graph.create", {"name": name, "gitems": gitems, "width": width, "height": height, "graphtype": type, "show_legend": show_legend})
+        return await client.call("graph.create", params)
 
 
 @mcp.tool(name="zabbix_graph_update", description="Update an existing Zabbix graph. Only provided fields are changed.", annotations=WRITE_IDEMPOTENT)
@@ -64,12 +72,14 @@ async def zabbix_graph_update(
     height: Annotated[int | None, Field(description="New height.", ge=20)]=None,
     type: Annotated[int | None, Field(description="New graph type.", ge=0, le=3)]=None,
 ) -> dict[str, Any]:
-    params: dict[str, Any] = {"graphid": graphid}
-    if name is not None: params["name"] = name
-    if gitems is not None: params["gitems"] = gitems
-    if width is not None: params["width"] = width
-    if height is not None: params["height"] = height
-    if type is not None: params["graphtype"] = type
+    params = compact({
+        "graphid": graphid,
+        "name": name,
+        "gitems": gitems,
+        "width": width,
+        "height": height,
+        "graphtype": type,
+    })
     async with ZabbixClient() as client:
         return await client.call("graph.update", params)
 

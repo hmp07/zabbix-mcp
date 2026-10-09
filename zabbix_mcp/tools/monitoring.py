@@ -6,6 +6,7 @@ from pydantic import Field
 from ..client import ZabbixClient
 from ..app import mcp
 from ._annotations import DELETE, READ_ONLY, WRITE, WRITE_IDEMPOTENT
+from ._params import compact
 
 
 @mcp.tool(name="zabbix_problem_get", description="List active Zabbix problems (open alerts). Filter by host, group, severity, or time range.", annotations=READ_ONLY)
@@ -21,15 +22,20 @@ async def zabbix_problem_get(
     limit: Annotated[int, Field(description="Maximum number of results.", ge=1, le=1000)] = 100,
     output: Annotated[list[str], Field(description="Fields to return.")] = ["eventid", "objectid", "name", "severity", "clock", "acknowledged"],
 ) -> list[dict[str, Any]]:
-    params: dict[str, Any] = {"output": output, "limit": limit}
-    if eventids is not None: params["eventids"] = eventids
-    if groupids is not None: params["groupids"] = groupids
-    if hostids is not None: params["hostids"] = hostids
-    if objectids is not None: params["objectids"] = objectids
-    if severities is not None: params["severities"] = severities
-    if time_from is not None: params["time_from"] = time_from
-    if time_till is not None: params["time_till"] = time_till
-    if recent: params["recent"] = True
+    params = compact({
+        "output": output,
+        "limit": limit,
+        "eventids": eventids,
+        "groupids": groupids,
+        "hostids": hostids,
+        "objectids": objectids,
+        "severities": severities,
+        "time_from": time_from,
+        "time_till": time_till,
+    })
+    # Only a truthy `recent` narrows the window; an explicit False is not sent.
+    if recent:
+        params["recent"] = True
     async with ZabbixClient() as client:
         return await client.call("problem.get", params)
 
@@ -47,15 +53,18 @@ async def zabbix_event_get(
     limit: Annotated[int, Field(description="Maximum number of results.", ge=1, le=1000)] = 100,
     output: Annotated[list[str], Field(description="Fields to return.")] = ["eventid", "objectid", "name", "source", "object", "value", "severity", "clock"],
 ) -> list[dict[str, Any]]:
-    params: dict[str, Any] = {"output": output, "limit": limit}
-    if eventids is not None: params["eventids"] = eventids
-    if groupids is not None: params["groupids"] = groupids
-    if hostids is not None: params["hostids"] = hostids
-    if objectids is not None: params["objectids"] = objectids
-    if value is not None: params["value"] = value
-    if severities is not None: params["severities"] = severities
-    if time_from is not None: params["time_from"] = time_from
-    if time_till is not None: params["time_till"] = time_till
+    params = compact({
+        "output": output,
+        "limit": limit,
+        "eventids": eventids,
+        "groupids": groupids,
+        "hostids": hostids,
+        "objectids": objectids,
+        "value": value,
+        "severities": severities,
+        "time_from": time_from,
+        "time_till": time_till,
+    })
     async with ZabbixClient() as client:
         return await client.call("event.get", params)
 
@@ -70,9 +79,16 @@ async def zabbix_history_get(
     limit: Annotated[int, Field(description="Maximum number of results.", ge=1, le=1000)] = 100,
     output: Annotated[list[str], Field(description="Fields to return.")] = ["itemid", "clock", "value", "ns"],
 ) -> list[dict[str, Any]]:
-    params: dict[str, Any] = {"output": output, "limit": limit, "history": history, "itemids": itemids, "sortfield": "clock", "sortorder": sortorder}
-    if time_from is not None: params["time_from"] = time_from
-    if time_till is not None: params["time_till"] = time_till
+    params = compact({
+        "output": output,
+        "limit": limit,
+        "sortfield": "clock",
+        "sortorder": sortorder,
+        "history": history,
+        "itemids": itemids,
+        "time_from": time_from,
+        "time_till": time_till,
+    })
     async with ZabbixClient() as client:
         return await client.call("history.get", params)
 
@@ -86,9 +102,14 @@ async def zabbix_trend_get(
     limit: Annotated[int, Field(description="Maximum number of results.", ge=1, le=1000)] = 100,
     output: Annotated[list[str], Field(description="Fields to return.")] = ["itemid", "clock", "num", "value_min", "value_avg", "value_max"],
 ) -> list[dict[str, Any]]:
-    params: dict[str, Any] = {"output": output, "limit": limit, "type": type, "itemids": itemids}
-    if time_from is not None: params["time_from"] = time_from
-    if time_till is not None: params["time_till"] = time_till
+    params = compact({
+        "output": output,
+        "limit": limit,
+        "type": type,
+        "itemids": itemids,
+        "time_from": time_from,
+        "time_till": time_till,
+    })
     async with ZabbixClient() as client:
         return await client.call("trend.get", params)
 
@@ -105,14 +126,17 @@ async def zabbix_alert_get(
     limit: Annotated[int, Field(description="Maximum number of results.", ge=1, le=1000)] = 100,
     output: Annotated[list[str], Field(description="Fields to return.")] = ["alertid", "eventid", "userid", "mediatypeid", "sendto", "subject", "status", "clock"],
 ) -> list[dict[str, Any]]:
-    params: dict[str, Any] = {"output": output, "limit": limit}
-    if alertids is not None: params["alertids"] = alertids
-    if eventids is not None: params["eventids"] = eventids
-    if groupids is not None: params["groupids"] = groupids
-    if hostids is not None: params["hostids"] = hostids
-    if mediatypeids is not None: params["mediatypeids"] = mediatypeids
-    if time_from is not None: params["time_from"] = time_from
-    if time_till is not None: params["time_till"] = time_till
+    params = compact({
+        "output": output,
+        "limit": limit,
+        "alertids": alertids,
+        "eventids": eventids,
+        "groupids": groupids,
+        "hostids": hostids,
+        "mediatypeids": mediatypeids,
+        "time_from": time_from,
+        "time_till": time_till,
+    })
     async with ZabbixClient() as client:
         return await client.call("alert.get", params)
 
@@ -124,8 +148,11 @@ async def zabbix_event_acknowledge(
     message: Annotated[str | None, Field(description="Message text (required if action includes 4).")]=None,
     severity: Annotated[int | None, Field(description="New severity (required if action includes 8).", ge=0, le=5)]=None,
 ) -> dict[str, Any]:
-    params: dict[str, Any] = {"eventids": eventids, "action": action}
-    if message is not None: params["message"] = message
-    if severity is not None: params["severity"] = severity
+    params = compact({
+        "eventids": eventids,
+        "action": action,
+        "message": message,
+        "severity": severity,
+    })
     async with ZabbixClient() as client:
         return await client.call("event.acknowledge", params)

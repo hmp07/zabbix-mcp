@@ -1,14 +1,12 @@
 """Zabbix MCP tools — Low-Level Discovery (rules and prototypes)."""
 
 from __future__ import annotations
-
 from typing import Annotated, Any
-
 from pydantic import Field
-
 from ..client import ZabbixClient
 from ..app import mcp
 from ._annotations import DELETE, READ_ONLY, WRITE, WRITE_IDEMPOTENT
+from ._params import compact, filter_params, search_params
 
 
 @mcp.tool(
@@ -32,22 +30,15 @@ async def zabbix_lld_rule_get(
     ],
 ) -> list[dict[str, Any]]:
     """Return Zabbix LLD discovery rules."""
-    params: dict[str, Any] = {"output": output, "limit": limit}
-    if itemids is not None:
-        params["itemids"] = itemids
-    if hostids is not None:
-        params["hostids"] = hostids
-    if templateids is not None:
-        params["templateids"] = templateids
-    if status is not None:
-        params["filter"] = {"status": status}
-    search: dict[str, str] = {}
-    if name is not None:
-        search["name"] = name
-    if key_ is not None:
-        search["key_"] = key_
-    if search:
-        params["search"] = search
+    params = compact({
+        "output": output,
+        "limit": limit,
+        "itemids": itemids,
+        "hostids": hostids,
+        "templateids": templateids,
+    })
+    params.update(filter_params(status=status))
+    params.update(search_params(name=name, key_=key_))
     async with ZabbixClient() as client:
         return await client.call("discoveryrule.get", params)
 
@@ -72,20 +63,14 @@ async def zabbix_lld_item_prototype_get(
     ],
 ) -> list[dict[str, Any]]:
     """Return item prototypes for Zabbix LLD rules."""
-    params: dict[str, Any] = {"output": output, "limit": limit}
-    if itemids is not None:
-        params["itemids"] = itemids
-    if discoveryids is not None:
-        params["discoveryids"] = discoveryids
-    if hostids is not None:
-        params["hostids"] = hostids
-    search: dict[str, str] = {}
-    if name is not None:
-        search["name"] = name
-    if key_ is not None:
-        search["key_"] = key_
-    if search:
-        params["search"] = search
+    params = compact({
+        "output": output,
+        "limit": limit,
+        "itemids": itemids,
+        "discoveryids": discoveryids,
+        "hostids": hostids,
+    })
+    params.update(search_params(name=name, key_=key_))
     async with ZabbixClient() as client:
         return await client.call("itemprototype.get", params)
 
@@ -110,17 +95,15 @@ async def zabbix_lld_trigger_prototype_get(
     ],
 ) -> list[dict[str, Any]]:
     """Return trigger prototypes for Zabbix LLD rules."""
-    params: dict[str, Any] = {"output": output, "limit": limit}
-    if triggerids is not None:
-        params["triggerids"] = triggerids
-    if discoveryids is not None:
-        params["discoveryids"] = discoveryids
-    if hostids is not None:
-        params["hostids"] = hostids
-    if status is not None:
-        params["filter"] = {"status": status}
-    if name is not None:
-        params["search"] = {"description": name}
+    params = compact({
+        "output": output,
+        "limit": limit,
+        "triggerids": triggerids,
+        "discoveryids": discoveryids,
+        "hostids": hostids,
+    })
+    params.update(filter_params(status=status))
+    params.update(search_params(description=name))
     async with ZabbixClient() as client:
         return await client.call("triggerprototype.get", params)
 
@@ -139,15 +122,14 @@ async def zabbix_lld_graph_prototype_get(
     output: Annotated[list[str], Field(description="Fields to return.")] = ["graphid", "name"],
 ) -> list[dict[str, Any]]:
     """Return graph prototypes for Zabbix LLD rules."""
-    params: dict[str, Any] = {"output": output, "limit": limit}
-    if graphids is not None:
-        params["graphids"] = graphids
-    if discoveryids is not None:
-        params["discoveryids"] = discoveryids
-    if hostids is not None:
-        params["hostids"] = hostids
-    if name is not None:
-        params["search"] = {"name": name}
+    params = compact({
+        "output": output,
+        "limit": limit,
+        "graphids": graphids,
+        "discoveryids": discoveryids,
+        "hostids": hostids,
+    })
+    params.update(search_params(name=name))
     async with ZabbixClient() as client:
         return await client.call("graphprototype.get", params)
 
@@ -171,15 +153,14 @@ async def zabbix_lld_host_prototype_get(
     ],
 ) -> list[dict[str, Any]]:
     """Return host prototypes for Zabbix LLD rules."""
-    params: dict[str, Any] = {"output": output, "limit": limit}
-    if hostids is not None:
-        params["hostids"] = hostids
-    if discoveryids is not None:
-        params["discoveryids"] = discoveryids
-    if groupids is not None:
-        params["groupids"] = groupids
-    if name is not None:
-        params["search"] = {"name": name}
+    params = compact({
+        "output": output,
+        "limit": limit,
+        "hostids": hostids,
+        "discoveryids": discoveryids,
+        "groupids": groupids,
+    })
+    params.update(search_params(name=name))
     async with ZabbixClient() as client:
         return await client.call("hostprototype.get", params)
 
@@ -209,7 +190,7 @@ async def zabbix_lld_rule_create(
     description: Annotated[str | None, Field(description="Rule description.")] = None,
 ) -> dict[str, Any]:
     """Create a Zabbix LLD discovery rule."""
-    params: dict[str, Any] = {
+    params = compact({
         "hostid": hostid,
         "name": name,
         "key_": key_,
@@ -217,15 +198,11 @@ async def zabbix_lld_rule_create(
         "delay": delay,
         "lifetime": lifetime,
         "status": status,
-    }
-    if filter is not None:
-        params["filter"] = filter
-    if preprocessing is not None:
-        params["preprocessing"] = preprocessing
-    if lld_macro_paths is not None:
-        params["lld_macro_paths"] = lld_macro_paths
-    if description is not None:
-        params["description"] = description
+        "filter": filter,
+        "preprocessing": preprocessing,
+        "lld_macro_paths": lld_macro_paths,
+        "description": description,
+    })
     async with ZabbixClient() as client:
         return await client.call("discoveryrule.create", params)
 
@@ -248,25 +225,18 @@ async def zabbix_lld_rule_update(
     description: Annotated[str | None, Field(description="New description.")] = None,
 ) -> dict[str, Any]:
     """Update a Zabbix LLD discovery rule."""
-    params: dict[str, Any] = {"itemid": itemid}
-    if name is not None:
-        params["name"] = name
-    if key_ is not None:
-        params["key_"] = key_
-    if delay is not None:
-        params["delay"] = delay
-    if lifetime is not None:
-        params["lifetime"] = lifetime
-    if status is not None:
-        params["status"] = status
-    if filter is not None:
-        params["filter"] = filter
-    if preprocessing is not None:
-        params["preprocessing"] = preprocessing
-    if lld_macro_paths is not None:
-        params["lld_macro_paths"] = lld_macro_paths
-    if description is not None:
-        params["description"] = description
+    params = compact({
+        "itemid": itemid,
+        "name": name,
+        "key_": key_,
+        "delay": delay,
+        "lifetime": lifetime,
+        "status": status,
+        "filter": filter,
+        "preprocessing": preprocessing,
+        "lld_macro_paths": lld_macro_paths,
+        "description": description,
+    })
     async with ZabbixClient() as client:
         return await client.call("discoveryrule.update", params)
 
@@ -297,7 +267,7 @@ async def zabbix_lld_item_prototype_create(
     description: Annotated[str | None, Field(description="Prototype description.")] = None,
 ) -> dict[str, Any]:
     """Create an item prototype for a Zabbix LLD rule."""
-    params: dict[str, Any] = {
+    params = compact({
         "hostid": hostid,
         "ruleid": ruleid,
         "name": name,
@@ -307,15 +277,11 @@ async def zabbix_lld_item_prototype_create(
         "delay": delay,
         "history": history,
         "trends": trends,
-    }
-    if units is not None:
-        params["units"] = units
-    if tags is not None:
-        params["tags"] = tags
-    if preprocessing is not None:
-        params["preprocessing"] = preprocessing
-    if description is not None:
-        params["description"] = description
+        "units": units,
+        "tags": tags,
+        "preprocessing": preprocessing,
+        "description": description,
+    })
     async with ZabbixClient() as client:
         return await client.call("itemprototype.create", params)
 
@@ -339,27 +305,19 @@ async def zabbix_lld_item_prototype_update(
     description: Annotated[str | None, Field(description="New description.")] = None,
 ) -> dict[str, Any]:
     """Update a Zabbix LLD item prototype."""
-    params: dict[str, Any] = {"itemid": itemid}
-    if name is not None:
-        params["name"] = name
-    if key_ is not None:
-        params["key_"] = key_
-    if delay is not None:
-        params["delay"] = delay
-    if history is not None:
-        params["history"] = history
-    if trends is not None:
-        params["trends"] = trends
-    if units is not None:
-        params["units"] = units
-    if status is not None:
-        params["status"] = status
-    if tags is not None:
-        params["tags"] = tags
-    if preprocessing is not None:
-        params["preprocessing"] = preprocessing
-    if description is not None:
-        params["description"] = description
+    params = compact({
+        "itemid": itemid,
+        "name": name,
+        "key_": key_,
+        "delay": delay,
+        "history": history,
+        "trends": trends,
+        "units": units,
+        "status": status,
+        "tags": tags,
+        "preprocessing": preprocessing,
+        "description": description,
+    })
     async with ZabbixClient() as client:
         return await client.call("itemprototype.update", params)
 
@@ -386,23 +344,18 @@ async def zabbix_lld_trigger_prototype_create(
     recovery_expression: Annotated[str | None, Field(description="Recovery expression (required if recovery_mode=1).")] = None,
 ) -> dict[str, Any]:
     """Create a trigger prototype for a Zabbix LLD rule."""
-    params: dict[str, Any] = {
+    params = compact({
         "description": description,
         "expression": expression,
         "ruleid": ruleid,
         "priority": priority,
         "status": status,
-    }
-    if tags is not None:
-        params["tags"] = tags
-    if comments is not None:
-        params["comments"] = comments
-    if url is not None:
-        params["url"] = url
-    if recovery_mode is not None:
-        params["recovery_mode"] = recovery_mode
-    if recovery_expression is not None:
-        params["recovery_expression"] = recovery_expression
+        "tags": tags,
+        "comments": comments,
+        "url": url,
+        "recovery_mode": recovery_mode,
+        "recovery_expression": recovery_expression,
+    })
     async with ZabbixClient() as client:
         return await client.call("triggerprototype.create", params)
 
@@ -423,21 +376,16 @@ async def zabbix_lld_trigger_prototype_update(
     url: Annotated[str | None, Field(description="New URL.")] = None,
 ) -> dict[str, Any]:
     """Update a Zabbix LLD trigger prototype."""
-    params: dict[str, Any] = {"triggerid": triggerid}
-    if description is not None:
-        params["description"] = description
-    if expression is not None:
-        params["expression"] = expression
-    if priority is not None:
-        params["priority"] = priority
-    if status is not None:
-        params["status"] = status
-    if tags is not None:
-        params["tags"] = tags
-    if comments is not None:
-        params["comments"] = comments
-    if url is not None:
-        params["url"] = url
+    params = compact({
+        "triggerid": triggerid,
+        "description": description,
+        "expression": expression,
+        "priority": priority,
+        "status": status,
+        "tags": tags,
+        "comments": comments,
+        "url": url,
+    })
     async with ZabbixClient() as client:
         return await client.call("triggerprototype.update", params)
 
@@ -460,7 +408,7 @@ async def zabbix_lld_graph_prototype_create(
     show_legend: Annotated[int, Field(description="1=show legend (default), 0=hide.", ge=0, le=1)] = 1,
 ) -> dict[str, Any]:
     """Create a graph prototype for a Zabbix LLD rule."""
-    params: dict[str, Any] = {
+    params = {
         "name": name,
         "gitems": gitems,
         "width": width,
@@ -486,17 +434,14 @@ async def zabbix_lld_graph_prototype_update(
     type: Annotated[int | None, Field(description="New graph type: 0=normal, 1=stacked, 2=pie, 3=exploded.", ge=0, le=3)] = None,
 ) -> dict[str, Any]:
     """Update a Zabbix LLD graph prototype."""
-    params: dict[str, Any] = {"graphid": graphid}
-    if name is not None:
-        params["name"] = name
-    if gitems is not None:
-        params["gitems"] = gitems
-    if width is not None:
-        params["width"] = width
-    if height is not None:
-        params["height"] = height
-    if type is not None:
-        params["graphtype"] = type
+    params = compact({
+        "graphid": graphid,
+        "name": name,
+        "gitems": gitems,
+        "width": width,
+        "height": height,
+        "graphtype": type,
+    })
     async with ZabbixClient() as client:
         return await client.call("graphprototype.update", params)
 
@@ -522,21 +467,16 @@ async def zabbix_lld_host_prototype_create(
     inventory_mode: Annotated[int | None, Field(description="-1=disabled, 0=manual, 1=automatic.", ge=-1, le=1)] = None,
 ) -> dict[str, Any]:
     """Create a host prototype for a Zabbix LLD rule."""
-    params: dict[str, Any] = {
+    params = compact({
         "ruleid": ruleid,
         "host": host,
         "status": status,
-    }
-    if name is not None:
-        params["name"] = name
-    if groupLinks is not None:
-        params["groupLinks"] = groupLinks
-    if groupPrototypes is not None:
-        params["groupPrototypes"] = groupPrototypes
-    if templates is not None:
-        params["templates"] = templates
-    if inventory_mode is not None:
-        params["inventory_mode"] = inventory_mode
+        "name": name,
+        "groupLinks": groupLinks,
+        "groupPrototypes": groupPrototypes,
+        "templates": templates,
+        "inventory_mode": inventory_mode,
+    })
     async with ZabbixClient() as client:
         return await client.call("hostprototype.create", params)
 
@@ -557,21 +497,16 @@ async def zabbix_lld_host_prototype_update(
     inventory_mode: Annotated[int | None, Field(description="-1=disabled, 0=manual, 1=automatic.", ge=-1, le=1)] = None,
 ) -> dict[str, Any]:
     """Update a Zabbix LLD host prototype."""
-    params: dict[str, Any] = {"hostid": hostid}
-    if host is not None:
-        params["host"] = host
-    if name is not None:
-        params["name"] = name
-    if groupLinks is not None:
-        params["groupLinks"] = groupLinks
-    if groupPrototypes is not None:
-        params["groupPrototypes"] = groupPrototypes
-    if templates is not None:
-        params["templates"] = templates
-    if status is not None:
-        params["status"] = status
-    if inventory_mode is not None:
-        params["inventory_mode"] = inventory_mode
+    params = compact({
+        "hostid": hostid,
+        "host": host,
+        "name": name,
+        "groupLinks": groupLinks,
+        "groupPrototypes": groupPrototypes,
+        "templates": templates,
+        "status": status,
+        "inventory_mode": inventory_mode,
+    })
     async with ZabbixClient() as client:
         return await client.call("hostprototype.update", params)
 

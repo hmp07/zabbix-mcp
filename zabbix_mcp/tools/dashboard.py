@@ -1,14 +1,12 @@
 """Zabbix MCP tools — Dashboards and Template Dashboards (read, write, delete)."""
 
 from __future__ import annotations
-
 from typing import Annotated, Any
-
 from pydantic import Field
-
 from ..client import ZabbixClient
 from ..app import mcp
 from ._annotations import DELETE, READ_ONLY, WRITE, WRITE_IDEMPOTENT
+from ._params import compact, search_params
 
 
 @mcp.tool(
@@ -26,13 +24,13 @@ async def zabbix_dashboard_get(
     ],
 ) -> list[dict[str, Any]]:
     """Return Zabbix dashboards matching the given filters."""
-    params: dict[str, Any] = {"output": output, "limit": limit}
-    if dashboardids is not None:
-        params["dashboardids"] = dashboardids
-    if userids is not None:
-        params["userids"] = userids
-    if name is not None:
-        params["search"] = {"name": name}
+    params = compact({
+        "output": output,
+        "limit": limit,
+        "dashboardids": dashboardids,
+        "userids": userids,
+    })
+    params.update(search_params(name=name))
     async with ZabbixClient() as client:
         return await client.call("dashboard.get", params)
 
@@ -52,13 +50,13 @@ async def zabbix_template_dashboard_get(
     ],
 ) -> list[dict[str, Any]]:
     """Return Zabbix template dashboards."""
-    params: dict[str, Any] = {"output": output, "limit": limit}
-    if dashboardids is not None:
-        params["dashboardids"] = dashboardids
-    if templateids is not None:
-        params["templateids"] = templateids
-    if name is not None:
-        params["search"] = {"name": name}
+    params = compact({
+        "output": output,
+        "limit": limit,
+        "dashboardids": dashboardids,
+        "templateids": templateids,
+    })
+    params.update(search_params(name=name))
     async with ZabbixClient() as client:
         return await client.call("templatedashboard.get", params)
 
@@ -80,11 +78,12 @@ async def zabbix_dashboard_create(
     userid: Annotated[str | None, Field(description="Owner user ID. Defaults to the authenticated user.")] = None,
 ) -> dict[str, Any]:
     """Create a Zabbix dashboard."""
-    params: dict[str, Any] = {"name": name, "private": private}
-    if pages is not None:
-        params["pages"] = pages
-    if userid is not None:
-        params["userid"] = userid
+    params = compact({
+        "name": name,
+        "private": private,
+        "pages": pages,
+        "userid": userid,
+    })
     async with ZabbixClient() as client:
         return await client.call("dashboard.create", params)
 
@@ -101,13 +100,12 @@ async def zabbix_dashboard_update(
     private: Annotated[int | None, Field(description="0=public, 1=private.", ge=0, le=1)] = None,
 ) -> dict[str, Any]:
     """Update a Zabbix dashboard."""
-    params: dict[str, Any] = {"dashboardid": dashboardid}
-    if name is not None:
-        params["name"] = name
-    if pages is not None:
-        params["pages"] = pages
-    if private is not None:
-        params["private"] = private
+    params = compact({
+        "dashboardid": dashboardid,
+        "name": name,
+        "pages": pages,
+        "private": private,
+    })
     async with ZabbixClient() as client:
         return await client.call("dashboard.update", params)
 
@@ -123,9 +121,11 @@ async def zabbix_template_dashboard_create(
     pages: Annotated[list[dict[str, Any]] | None, Field(description="Dashboard pages with widgets.")] = None,
 ) -> dict[str, Any]:
     """Create a template dashboard."""
-    params: dict[str, Any] = {"templateid": templateid, "name": name}
-    if pages is not None:
-        params["pages"] = pages
+    params = compact({
+        "templateid": templateid,
+        "name": name,
+        "pages": pages,
+    })
     async with ZabbixClient() as client:
         return await client.call("templatedashboard.create", params)
 
@@ -141,11 +141,11 @@ async def zabbix_template_dashboard_update(
     pages: Annotated[list[dict[str, Any]] | None, Field(description="Replace dashboard pages.")] = None,
 ) -> dict[str, Any]:
     """Update a template dashboard."""
-    params: dict[str, Any] = {"dashboardid": dashboardid}
-    if name is not None:
-        params["name"] = name
-    if pages is not None:
-        params["pages"] = pages
+    params = compact({
+        "dashboardid": dashboardid,
+        "name": name,
+        "pages": pages,
+    })
     async with ZabbixClient() as client:
         return await client.call("templatedashboard.update", params)
 

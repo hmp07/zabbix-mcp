@@ -9,6 +9,7 @@ from pydantic import Field
 from ..client import ZabbixClient
 from ..app import mcp
 from ._annotations import DELETE, READ_ONLY, WRITE, WRITE_IDEMPOTENT
+from ._params import compact
 
 
 @mcp.tool(
@@ -29,14 +30,12 @@ async def zabbix_host_problems_summary(
     """Summarise active problems per host, grouped by severity."""
     async with ZabbixClient() as client:
         # 1. Resolve hosts
-        host_params: dict[str, Any] = {
+        host_params = compact({
             "output": ["hostid", "host", "name"],
             "limit": 1000,
-        }
-        if hostids is not None:
-            host_params["hostids"] = hostids
-        if groupids is not None:
-            host_params["groupids"] = groupids
+            "hostids": hostids,
+            "groupids": groupids,
+        })
         hosts = await client.call("host.get", host_params)
 
         if not hosts:
@@ -127,7 +126,7 @@ async def zabbix_lld_scaffold(
 ) -> dict[str, Any]:
     """Create a complete LLD rule + item prototype + trigger prototype in one call."""
     async with ZabbixClient() as client:
-        rule_params: dict[str, Any] = {
+        rule_params = compact({
             "hostid": hostid,
             "name": rule_name,
             "key_": rule_key,
@@ -135,11 +134,11 @@ async def zabbix_lld_scaffold(
             "delay": rule_delay,
             "lifetime": "30d",
             "status": 0,
-        }
+        })
         rule_result = await client.call("discoveryrule.create", rule_params)
         ruleid = rule_result["itemids"][0]
 
-        item_params: dict[str, Any] = {
+        item_params = compact({
             "hostid": hostid,
             "ruleid": ruleid,
             "name": item_name,
@@ -149,9 +148,8 @@ async def zabbix_lld_scaffold(
             "delay": item_delay,
             "history": "7d",
             "trends": "365d",
-        }
-        if item_units is not None:
-            item_params["units"] = item_units
+            "units": item_units,
+        })
         item_result = await client.call("itemprototype.create", item_params)
         item_prototype_id = item_result["itemids"][0]
 

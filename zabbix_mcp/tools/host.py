@@ -9,6 +9,7 @@ from pydantic import Field
 from ..client import ZabbixClient
 from ..app import mcp
 from ._annotations import DELETE, READ_ONLY, WRITE, WRITE_IDEMPOTENT
+from ._params import compact, filter_params, search_params
 
 
 @mcp.tool(
@@ -28,17 +29,15 @@ async def zabbix_host_get(
     limit: Annotated[int, Field(description="Maximum number of results.", ge=1, le=1000)] = 100,
     output: Annotated[list[str], Field(description="Fields to return.")] = ["hostid", "host", "name", "status"],
 ) -> list[dict[str, Any]]:
-    params: dict[str, Any] = {"output": output, "limit": limit}
-    if hostids is not None:
-        params["hostids"] = hostids
-    if groupids is not None:
-        params["groupids"] = groupids
-    if templateids is not None:
-        params["templateids"] = templateids
-    if status is not None:
-        params["filter"] = {"status": status}
-    if name is not None:
-        params["search"] = {"name": name}
+    params = compact({
+        "output": output,
+        "limit": limit,
+        "hostids": hostids,
+        "groupids": groupids,
+        "templateids": templateids,
+    })
+    params.update(filter_params(status=status))
+    params.update(search_params(name=name))
     async with ZabbixClient() as client:
         return await client.call("host.get", params)
 
@@ -60,13 +59,13 @@ async def zabbix_host_interface_get(
         "interfaceid", "hostid", "ip", "dns", "port", "type", "main", "useip",
     ],
 ) -> list[dict[str, Any]]:
-    params: dict[str, Any] = {"output": output, "limit": limit}
-    if hostids is not None:
-        params["hostids"] = hostids
-    if interfaceids is not None:
-        params["interfaceids"] = interfaceids
-    if type is not None:
-        params["filter"] = {"type": type}
+    params = compact({
+        "output": output,
+        "limit": limit,
+        "hostids": hostids,
+        "interfaceids": interfaceids,
+    })
+    params.update(filter_params(type=type))
     async with ZabbixClient() as client:
         return await client.call("hostinterface.get", params)
 
@@ -83,13 +82,17 @@ async def zabbix_host_create(
     macros: Annotated[list[dict[str, Any]] | None, Field(description="Host macros.")] = None,
     description: Annotated[str | None, Field(description="Host description.")] = None,
 ) -> dict[str, Any]:
-    params: dict[str, Any] = {"host": host, "groups": groups, "status": status}
-    if interfaces is not None: params["interfaces"] = interfaces
-    if templates is not None: params["templates"] = templates
-    if name is not None: params["name"] = name
-    if tags is not None: params["tags"] = tags
-    if macros is not None: params["macros"] = macros
-    if description is not None: params["description"] = description
+    params = compact({
+        "host": host,
+        "groups": groups,
+        "status": status,
+        "interfaces": interfaces,
+        "templates": templates,
+        "name": name,
+        "tags": tags,
+        "macros": macros,
+        "description": description,
+    })
     async with ZabbixClient() as client:
         return await client.call("host.create", params)
 
@@ -106,15 +109,17 @@ async def zabbix_host_update(
     macros: Annotated[list[dict[str, Any]] | None, Field(description="Replace host macros.")] = None,
     description: Annotated[str | None, Field(description="New description.")] = None,
 ) -> dict[str, Any]:
-    params: dict[str, Any] = {"hostid": hostid}
-    if host is not None: params["host"] = host
-    if name is not None: params["name"] = name
-    if status is not None: params["status"] = status
-    if groups is not None: params["groups"] = groups
-    if templates is not None: params["templates"] = templates
-    if tags is not None: params["tags"] = tags
-    if macros is not None: params["macros"] = macros
-    if description is not None: params["description"] = description
+    params = compact({
+        "hostid": hostid,
+        "host": host,
+        "name": name,
+        "status": status,
+        "groups": groups,
+        "templates": templates,
+        "tags": tags,
+        "macros": macros,
+        "description": description,
+    })
     async with ZabbixClient() as client:
         return await client.call("host.update", params)
 
@@ -130,8 +135,16 @@ async def zabbix_host_interface_create(
     port: Annotated[str, Field(description="Port. Example: '10050'.")],
     details: Annotated[dict[str, Any] | None, Field(description="SNMP details.")] = None,
 ) -> dict[str, Any]:
-    params: dict[str, Any] = {"hostid": hostid, "type": type, "main": main, "useip": useip, "ip": ip, "dns": dns, "port": port}
-    if details is not None: params["details"] = details
+    params = compact({
+        "hostid": hostid,
+        "type": type,
+        "main": main,
+        "useip": useip,
+        "ip": ip,
+        "dns": dns,
+        "port": port,
+        "details": details,
+    })
     async with ZabbixClient() as client:
         return await client.call("hostinterface.create", params)
 
@@ -146,13 +159,15 @@ async def zabbix_host_interface_update(
     useip: Annotated[int | None, Field(description="1=IP, 0=DNS.", ge=0, le=1)] = None,
     details: Annotated[dict[str, Any] | None, Field(description="Updated SNMP details.")] = None,
 ) -> dict[str, Any]:
-    params: dict[str, Any] = {"interfaceid": interfaceid}
-    if ip is not None: params["ip"] = ip
-    if dns is not None: params["dns"] = dns
-    if port is not None: params["port"] = port
-    if main is not None: params["main"] = main
-    if useip is not None: params["useip"] = useip
-    if details is not None: params["details"] = details
+    params = compact({
+        "interfaceid": interfaceid,
+        "ip": ip,
+        "dns": dns,
+        "port": port,
+        "main": main,
+        "useip": useip,
+        "details": details,
+    })
     async with ZabbixClient() as client:
         return await client.call("hostinterface.update", params)
 
