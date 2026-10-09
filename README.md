@@ -12,6 +12,7 @@ A complete [MCP](https://modelcontextprotocol.io/) server for **Zabbix 7.4**, en
 ## Features
 
 - **86 tools** covering the full Zabbix API surface
+- One shared, reused HTTP session for the whole server (no per-call connections)
 - Read-only, write, and destructive operations with explicit annotations
 - Hosts, host groups, items, triggers, LLD rules, graphs, dashboards, templates, maintenances, macros and more
 - 3 workflow tools for common multi-step operations
@@ -113,7 +114,7 @@ Set `ZABBIX_READ_ONLY=true` to start the server with only read-only tools expose
 }
 ```
 
-In read-only mode, 61 write/delete tools are removed, leaving 25 read-only tools.
+In read-only mode, 60 write/delete tools are removed, leaving 26 read-only tools.
 
 ### Environment variables
 
@@ -173,6 +174,24 @@ Once configured, interact with your Zabbix infrastructure naturally:
 
 All tools follow the `zabbix_<resource>_<action>` naming convention and declare annotations (`readOnlyHint`, `destructiveHint`, `idempotentHint`) so the client can make informed decisions about safety.
 
+### Result limits and pagination
+
+Read tools accept a `limit` parameter (default 100, max 1000) and do **not** paginate. A
+query that matches more records than `limit` is silently truncated -- the response carries no
+total count, so the caller cannot tell a complete result from a clipped one.
+
+When working on large instances, raise `limit` deliberately and narrow the filter (for example
+by `hostids` or `groupids`) rather than assuming the default returned everything.
+
+## Connection handling
+
+All tools share a single HTTP session for the life of the server process. It is opened on the
+first tool call and closed when the server shuts down, so repeated calls reuse one
+authenticated connection instead of opening a new one each time. Outbound connections are
+capped at 20; concurrent calls beyond that queue rather than exhausting sockets.
+
+A network failure evicts the shared session so the next attempt reconnects cleanly.
+
 ## Running tests
 
 ```bash
@@ -186,13 +205,14 @@ Coverage: **96%** -- 1045 tests.
 
 ```
 zabbix_mcp/
-├── app.py              # MCP application instance (shared across all modules)
+├── app.py              # MCP application instance + shared-session lifespan
 ├── server.py           # Entry point, transport selection, read-only mode
-├── client.py           # Zabbix API wrapper (auth, retry, pagination)
+├── client.py           # Zabbix API wrapper (auth, retry, shared session)
 ├── auth.py             # Credential and transport config from env vars
 ├── errors.py           # Typed errors with actionable messages
 └── tools/
     ├── _annotations.py # Shared annotation dicts (READ_ONLY, WRITE, DELETE)
+    ├── _params.py      # Zabbix param assembly helpers (None-drop, filter/search)
     ├── host.py
     ├── hostgroup.py
     ├── item.py
