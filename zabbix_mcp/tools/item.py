@@ -3,7 +3,7 @@
 from __future__ import annotations
 from typing import Annotated, Any
 from pydantic import Field
-from ..client import ZabbixClient
+from ..client import shared_session
 from ..app import mcp
 from ._annotations import DELETE, READ_ONLY, WRITE, WRITE_IDEMPOTENT
 from ._params import compact, filter_params, search_params
@@ -31,7 +31,7 @@ async def zabbix_item_get(
     })
     params.update(filter_params(status=status))
     params.update(search_params(name=name, key_=key_))
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("item.get", params)
 
 
@@ -66,7 +66,7 @@ async def zabbix_item_create(
         "tags": tags,
         "description": description,
     })
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("item.create", params)
 
 
@@ -99,11 +99,11 @@ async def zabbix_item_update(
         "tags": tags,
         "description": description,
     })
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("item.update", params)
 
 
 @mcp.tool(name="zabbix_item_delete", description="⚠️ DESTRUCTIVE — Permanently delete Zabbix items and all their history. Cannot be undone.", annotations=DELETE)
 async def zabbix_item_delete(itemids: Annotated[list[str], Field(description="IDs of items to delete.")]) -> dict[str, Any]:
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("item.delete", itemids)

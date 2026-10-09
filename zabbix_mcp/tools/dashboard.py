@@ -3,7 +3,7 @@
 from __future__ import annotations
 from typing import Annotated, Any
 from pydantic import Field
-from ..client import ZabbixClient
+from ..client import shared_session
 from ..app import mcp
 from ._annotations import DELETE, READ_ONLY, WRITE, WRITE_IDEMPOTENT
 from ._params import compact, search_params
@@ -31,7 +31,7 @@ async def zabbix_dashboard_get(
         "userids": userids,
     })
     params.update(search_params(name=name))
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("dashboard.get", params)
 
 
@@ -57,7 +57,7 @@ async def zabbix_template_dashboard_get(
         "templateids": templateids,
     })
     params.update(search_params(name=name))
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("templatedashboard.get", params)
 
 
@@ -84,7 +84,7 @@ async def zabbix_dashboard_create(
         "pages": pages,
         "userid": userid,
     })
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("dashboard.create", params)
 
 
@@ -106,7 +106,7 @@ async def zabbix_dashboard_update(
         "pages": pages,
         "private": private,
     })
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("dashboard.update", params)
 
 
@@ -126,7 +126,7 @@ async def zabbix_template_dashboard_create(
         "name": name,
         "pages": pages,
     })
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("templatedashboard.create", params)
 
 
@@ -146,7 +146,7 @@ async def zabbix_template_dashboard_update(
         "name": name,
         "pages": pages,
     })
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("templatedashboard.update", params)
 
 
@@ -162,7 +162,7 @@ async def zabbix_dashboard_delete(
     dashboardids: Annotated[list[str], Field(description="IDs of dashboards to delete.")],
 ) -> dict[str, Any]:
     """Permanently delete Zabbix dashboards."""
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("dashboard.delete", dashboardids)
 
 
@@ -178,5 +178,5 @@ async def zabbix_template_dashboard_delete(
     dashboardids: Annotated[list[str], Field(description="IDs of template dashboards to delete.")],
 ) -> dict[str, Any]:
     """Permanently delete Zabbix template dashboards."""
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("templatedashboard.delete", dashboardids)

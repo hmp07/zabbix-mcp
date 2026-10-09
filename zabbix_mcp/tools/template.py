@@ -3,7 +3,7 @@
 from __future__ import annotations
 from typing import Annotated, Any
 from pydantic import Field
-from ..client import ZabbixClient
+from ..client import shared_session
 from ..app import mcp
 from ._annotations import DELETE, READ_ONLY, WRITE, WRITE_IDEMPOTENT
 from ._params import compact, search_params
@@ -36,7 +36,7 @@ async def zabbix_template_get(
         "hostids": hostids,
     })
     params.update(search_params(name=name))
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("template.get", params)
 
 
@@ -60,7 +60,7 @@ async def zabbix_templategroup_get(
         "templateids": templateids,
     })
     params.update(search_params(name=name))
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("templategroup.get", params)
 
 
@@ -91,7 +91,7 @@ async def zabbix_valuemap_get(
         "templateids": templateids,
     })
     params.update(search_params(name=name))
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("valuemap.get", params)
 
 
@@ -117,7 +117,7 @@ async def zabbix_report_get(
         "userid": userid,
     })
     params.update(search_params(name=name))
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("report.get", params)
 
 
@@ -149,7 +149,7 @@ async def zabbix_template_create(
         "tags": tags,
         "macros": macros,
     })
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("template.create", params)
 
 
@@ -179,7 +179,7 @@ async def zabbix_template_update(
         "tags": tags,
         "macros": macros,
     })
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("template.update", params)
 
 
@@ -192,7 +192,7 @@ async def zabbix_templategroup_create(
     name: Annotated[str, Field(description="Template group name.")],
 ) -> dict[str, Any]:
     """Create a Zabbix template group."""
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("templategroup.create", {"name": name})
 
 
@@ -206,7 +206,7 @@ async def zabbix_templategroup_update(
     name: Annotated[str, Field(description="New group name.")],
 ) -> dict[str, Any]:
     """Update a Zabbix template group."""
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("templategroup.update", {"groupid": groupid, "name": name})
 
 
@@ -226,7 +226,7 @@ async def zabbix_valuemap_create(
 ) -> dict[str, Any]:
     """Create a Zabbix value map."""
     params = {"hostid": hostid, "name": name, "mappings": mappings}
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("valuemap.create", params)
 
 
@@ -246,7 +246,7 @@ async def zabbix_valuemap_update(
         "name": name,
         "mappings": mappings,
     })
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("valuemap.update", params)
 
 
@@ -286,7 +286,7 @@ async def zabbix_report_create(
         "usergroups": usergroups,
         "description": description,
     })
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("report.create", params)
 
 
@@ -320,7 +320,7 @@ async def zabbix_report_update(
         "usergroups": usergroups,
         "description": description,
     })
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("report.update", params)
 
 
@@ -337,7 +337,7 @@ async def zabbix_template_delete(
     templateids: Annotated[list[str], Field(description="IDs of templates to delete.")],
 ) -> dict[str, Any]:
     """Permanently delete Zabbix templates."""
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("template.delete", templateids)
 
 
@@ -354,7 +354,7 @@ async def zabbix_templategroup_delete(
     groupids: Annotated[list[str], Field(description="IDs of template groups to delete.")],
 ) -> dict[str, Any]:
     """Permanently delete Zabbix template groups."""
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("templategroup.delete", groupids)
 
 
@@ -371,7 +371,7 @@ async def zabbix_valuemap_delete(
     valuemapids: Annotated[list[str], Field(description="IDs of value maps to delete.")],
 ) -> dict[str, Any]:
     """Permanently delete Zabbix value maps."""
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("valuemap.delete", valuemapids)
 
 
@@ -387,5 +387,5 @@ async def zabbix_report_delete(
     reportids: Annotated[list[str], Field(description="IDs of reports to delete.")],
 ) -> dict[str, Any]:
     """Permanently delete Zabbix scheduled reports."""
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("report.delete", reportids)

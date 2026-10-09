@@ -18,7 +18,7 @@ def _mock_client_multi(side_effects: list):
     cm = AsyncMock()
     cm.__aenter__ = AsyncMock(return_value=mock)
     cm.__aexit__ = AsyncMock(return_value=None)
-    return mock, patch("zabbix_mcp.tools.workflow.ZabbixClient", return_value=cm)
+    return mock, patch("zabbix_mcp.tools.workflow.shared_session", return_value=cm)
 
 
 class TestZabbixHostProblemsSummary:

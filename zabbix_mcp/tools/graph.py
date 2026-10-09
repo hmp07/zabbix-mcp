@@ -3,7 +3,7 @@
 from __future__ import annotations
 from typing import Annotated, Any
 from pydantic import Field
-from ..client import ZabbixClient
+from ..client import shared_session
 from ..app import mcp
 from ._annotations import DELETE, READ_ONLY, WRITE, WRITE_IDEMPOTENT
 from ._params import compact, search_params
@@ -28,7 +28,7 @@ async def zabbix_graph_get(
         "templateids": templateids,
     })
     params.update(search_params(name=name))
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("graph.get", params)
 
 
@@ -45,7 +45,7 @@ async def zabbix_graph_item_get(
         "graphids": graphids,
         "itemids": itemids,
     })
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("graphitem.get", params)
 
 
@@ -59,7 +59,7 @@ async def zabbix_graph_create(
     show_legend: Annotated[int, Field(description="1=show, 0=hide.", ge=0, le=1)] = 1,
 ) -> dict[str, Any]:
     params = {"name": name, "gitems": gitems, "width": width, "height": height, "graphtype": type, "show_legend": show_legend}
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("graph.create", params)
 
 
@@ -80,11 +80,11 @@ async def zabbix_graph_update(
         "height": height,
         "graphtype": type,
     })
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("graph.update", params)
 
 
 @mcp.tool(name="zabbix_graph_delete", description="⚠️ DESTRUCTIVE — Permanently delete Zabbix graphs. Cannot be undone.", annotations=DELETE)
 async def zabbix_graph_delete(graphids: Annotated[list[str], Field(description="IDs of graphs to delete.")]) -> dict[str, Any]:
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("graph.delete", graphids)

@@ -6,7 +6,7 @@ from typing import Annotated, Any
 
 from pydantic import Field
 
-from ..client import ZabbixClient
+from ..client import shared_session
 from ..app import mcp
 from ._annotations import DELETE, READ_ONLY, WRITE, WRITE_IDEMPOTENT
 from ._params import compact, filter_params, search_params
@@ -38,7 +38,7 @@ async def zabbix_host_get(
     })
     params.update(filter_params(status=status))
     params.update(search_params(name=name))
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("host.get", params)
 
 
@@ -66,7 +66,7 @@ async def zabbix_host_interface_get(
         "interfaceids": interfaceids,
     })
     params.update(filter_params(type=type))
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("hostinterface.get", params)
 
 
@@ -93,7 +93,7 @@ async def zabbix_host_create(
         "macros": macros,
         "description": description,
     })
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("host.create", params)
 
 
@@ -120,7 +120,7 @@ async def zabbix_host_update(
         "macros": macros,
         "description": description,
     })
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("host.update", params)
 
 
@@ -145,7 +145,7 @@ async def zabbix_host_interface_create(
         "port": port,
         "details": details,
     })
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("hostinterface.create", params)
 
 
@@ -168,17 +168,17 @@ async def zabbix_host_interface_update(
         "useip": useip,
         "details": details,
     })
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("hostinterface.update", params)
 
 
 @mcp.tool(name="zabbix_host_delete", description="⚠️ DESTRUCTIVE — Permanently delete Zabbix hosts and all their items, triggers, graphs, and history. Cannot be undone.", annotations=DELETE)
 async def zabbix_host_delete(hostids: Annotated[list[str], Field(description="IDs of hosts to delete.")]) -> dict[str, Any]:
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("host.delete", hostids)
 
 
 @mcp.tool(name="zabbix_host_interface_delete", description="⚠️ DESTRUCTIVE — Permanently delete host interfaces. Cannot be undone.", annotations=DELETE)
 async def zabbix_host_interface_delete(interfaceids: Annotated[list[str], Field(description="IDs of interfaces to delete.")]) -> dict[str, Any]:
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("hostinterface.delete", interfaceids)

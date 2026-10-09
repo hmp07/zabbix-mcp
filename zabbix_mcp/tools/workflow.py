@@ -6,7 +6,7 @@ from typing import Annotated, Any
 
 from pydantic import Field
 
-from ..client import ZabbixClient
+from ..client import shared_session
 from ..app import mcp
 from ._annotations import DELETE, READ_ONLY, WRITE, WRITE_IDEMPOTENT
 from ._params import compact
@@ -28,7 +28,7 @@ async def zabbix_host_problems_summary(
     min_severity: Annotated[int, Field(description="Minimum severity to include: 0=not classified, 1=info, 2=warning, 3=average, 4=high, 5=disaster.", ge=0, le=5)] = 0,
 ) -> list[dict[str, Any]]:
     """Summarise active problems per host, grouped by severity."""
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         # 1. Resolve hosts
         host_params = compact({
             "output": ["hostid", "host", "name"],
@@ -125,7 +125,7 @@ async def zabbix_lld_scaffold(
     trigger_priority: Annotated[int, Field(description="Trigger severity: 0=not classified ... 5=disaster.", ge=0, le=5)] = 2,
 ) -> dict[str, Any]:
     """Create a complete LLD rule + item prototype + trigger prototype in one call."""
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         rule_params = compact({
             "hostid": hostid,
             "name": rule_name,
@@ -185,7 +185,7 @@ async def zabbix_template_link(
     templateids: Annotated[list[str], Field(description="IDs of templates to link.")],
 ) -> dict[str, Any]:
     """Link templates to hosts, preserving existing template links."""
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         host_params: dict[str, Any] = {
             "output": ["hostid"],
             "selectParentTemplates": ["templateid"],

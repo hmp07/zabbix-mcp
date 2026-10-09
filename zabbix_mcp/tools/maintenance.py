@@ -3,7 +3,7 @@
 from __future__ import annotations
 from typing import Annotated, Any
 from pydantic import Field
-from ..client import ZabbixClient
+from ..client import shared_session
 from ..app import mcp
 from ._annotations import DELETE, READ_ONLY, WRITE, WRITE_IDEMPOTENT
 from ._params import compact, search_params
@@ -38,7 +38,7 @@ async def zabbix_maintenance_get(
         "active_till": active_till,
     })
     params.update(search_params(name=name))
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("maintenance.get", params)
 
 
@@ -73,7 +73,7 @@ async def zabbix_maintenance_create(
         "hostids": hostids,
         "description": description,
     })
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("maintenance.create", params)
 
 
@@ -103,7 +103,7 @@ async def zabbix_maintenance_update(
         "hostids": hostids,
         "description": description,
     })
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("maintenance.update", params)
 
 
@@ -120,5 +120,5 @@ async def zabbix_maintenance_delete(
     maintenanceids: Annotated[list[str], Field(description="IDs of maintenance windows to delete.")],
 ) -> dict[str, Any]:
     """Permanently delete Zabbix maintenance windows."""
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("maintenance.delete", maintenanceids)

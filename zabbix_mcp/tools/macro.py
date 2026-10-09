@@ -3,7 +3,7 @@
 from __future__ import annotations
 from typing import Annotated, Any
 from pydantic import Field
-from ..client import ZabbixClient
+from ..client import shared_session
 from ..app import mcp
 from ._annotations import DELETE, READ_ONLY, WRITE, WRITE_IDEMPOTENT
 from ._params import compact, search_params
@@ -39,7 +39,7 @@ async def zabbix_usermacro_get(
         "templateids": templateids,
     })
     params.update(search_params(macro=macro))
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("usermacro.get", params)
 
 
@@ -68,7 +68,7 @@ async def zabbix_usermacro_create(
         "type": type,
         "description": description,
     })
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("usermacro.create", params)
 
 
@@ -90,7 +90,7 @@ async def zabbix_usermacro_update(
         "type": type,
         "description": description,
     })
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("usermacro.update", params)
 
 
@@ -107,5 +107,5 @@ async def zabbix_usermacro_delete(
     hostmacroids: Annotated[list[str], Field(description="IDs of user macros to delete.")],
 ) -> dict[str, Any]:
     """Permanently delete Zabbix user macros."""
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("usermacro.delete", hostmacroids)

@@ -19,7 +19,7 @@ def _mock_client(module_path: str, return_value: object):
     cm = AsyncMock()
     cm.__aenter__ = AsyncMock(return_value=mock)
     cm.__aexit__ = AsyncMock(return_value=None)
-    return mock, patch(f"zabbix_mcp.tools.lld.ZabbixClient", return_value=cm)
+    return mock, patch(f"zabbix_mcp.tools.lld.shared_session", return_value=cm)
 
 
 class TestZabbixLldRuleGet:

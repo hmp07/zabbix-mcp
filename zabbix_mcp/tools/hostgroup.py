@@ -3,7 +3,7 @@
 from __future__ import annotations
 from typing import Annotated, Any
 from pydantic import Field
-from ..client import ZabbixClient
+from ..client import shared_session
 from ..app import mcp
 from ._annotations import DELETE, READ_ONLY, WRITE, WRITE_IDEMPOTENT
 from ._params import as_int_flag, compact, search_params
@@ -28,13 +28,13 @@ async def zabbix_hostgroup_get(
         "real_hosts": as_int_flag(real_hosts),
     })
     params.update(search_params(name=name))
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("hostgroup.get", params)
 
 
 @mcp.tool(name="zabbix_hostgroup_create", description="Create a new Zabbix host group.", annotations=WRITE)
 async def zabbix_hostgroup_create(name: Annotated[str, Field(description="Name of the new host group.")]) -> dict[str, Any]:
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("hostgroup.create", {"name": name})
 
 
@@ -43,11 +43,11 @@ async def zabbix_hostgroup_update(
     groupid: Annotated[str, Field(description="ID of the host group to update.")],
     name: Annotated[str, Field(description="New name.")],
 ) -> dict[str, Any]:
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("hostgroup.update", {"groupid": groupid, "name": name})
 
 
 @mcp.tool(name="zabbix_hostgroup_delete", description="⚠️ DESTRUCTIVE — Permanently delete Zabbix host groups. Groups containing hosts cannot be deleted.", annotations=DELETE)
 async def zabbix_hostgroup_delete(groupids: Annotated[list[str], Field(description="IDs of host groups to delete.")]) -> dict[str, Any]:
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("hostgroup.delete", groupids)

@@ -3,7 +3,7 @@
 from __future__ import annotations
 from typing import Annotated, Any
 from pydantic import Field
-from ..client import ZabbixClient
+from ..client import shared_session
 from ..app import mcp
 from ._annotations import DELETE, READ_ONLY, WRITE, WRITE_IDEMPOTENT
 from ._params import as_int_flag, compact, filter_params, search_params
@@ -34,7 +34,7 @@ async def zabbix_trigger_get(
     })
     params.update(filter_params(status=status, value=value, priority=priority))
     params.update(search_params(description=name))
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("trigger.get", params)
 
 
@@ -63,7 +63,7 @@ async def zabbix_trigger_create(
         "recovery_mode": recovery_mode,
         "recovery_expression": recovery_expression,
     })
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("trigger.create", params)
 
 
@@ -88,11 +88,11 @@ async def zabbix_trigger_update(
         "comments": comments,
         "url": url,
     })
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("trigger.update", params)
 
 
 @mcp.tool(name="zabbix_trigger_delete", description="⚠️ DESTRUCTIVE — Permanently delete Zabbix triggers. Cannot be undone.", annotations=DELETE)
 async def zabbix_trigger_delete(triggerids: Annotated[list[str], Field(description="IDs of triggers to delete.")]) -> dict[str, Any]:
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("trigger.delete", triggerids)

@@ -3,7 +3,7 @@
 from __future__ import annotations
 from typing import Annotated, Any
 from pydantic import Field
-from ..client import ZabbixClient
+from ..client import shared_session
 from ..app import mcp
 from ._annotations import DELETE, READ_ONLY, WRITE, WRITE_IDEMPOTENT
 from ._params import compact
@@ -36,7 +36,7 @@ async def zabbix_problem_get(
     # Only a truthy `recent` narrows the window; an explicit False is not sent.
     if recent:
         params["recent"] = True
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("problem.get", params)
 
 
@@ -65,7 +65,7 @@ async def zabbix_event_get(
         "time_from": time_from,
         "time_till": time_till,
     })
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("event.get", params)
 
 
@@ -89,7 +89,7 @@ async def zabbix_history_get(
         "time_from": time_from,
         "time_till": time_till,
     })
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("history.get", params)
 
 
@@ -110,7 +110,7 @@ async def zabbix_trend_get(
         "time_from": time_from,
         "time_till": time_till,
     })
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("trend.get", params)
 
 
@@ -137,7 +137,7 @@ async def zabbix_alert_get(
         "time_from": time_from,
         "time_till": time_till,
     })
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("alert.get", params)
 
 
@@ -154,5 +154,5 @@ async def zabbix_event_acknowledge(
         "message": message,
         "severity": severity,
     })
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("event.acknowledge", params)

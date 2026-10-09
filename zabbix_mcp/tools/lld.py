@@ -3,7 +3,7 @@
 from __future__ import annotations
 from typing import Annotated, Any
 from pydantic import Field
-from ..client import ZabbixClient
+from ..client import shared_session
 from ..app import mcp
 from ._annotations import DELETE, READ_ONLY, WRITE, WRITE_IDEMPOTENT
 from ._params import compact, filter_params, search_params
@@ -39,7 +39,7 @@ async def zabbix_lld_rule_get(
     })
     params.update(filter_params(status=status))
     params.update(search_params(name=name, key_=key_))
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("discoveryrule.get", params)
 
 
@@ -71,7 +71,7 @@ async def zabbix_lld_item_prototype_get(
         "hostids": hostids,
     })
     params.update(search_params(name=name, key_=key_))
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("itemprototype.get", params)
 
 
@@ -104,7 +104,7 @@ async def zabbix_lld_trigger_prototype_get(
     })
     params.update(filter_params(status=status))
     params.update(search_params(description=name))
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("triggerprototype.get", params)
 
 
@@ -130,7 +130,7 @@ async def zabbix_lld_graph_prototype_get(
         "hostids": hostids,
     })
     params.update(search_params(name=name))
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("graphprototype.get", params)
 
 
@@ -161,7 +161,7 @@ async def zabbix_lld_host_prototype_get(
         "groupids": groupids,
     })
     params.update(search_params(name=name))
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("hostprototype.get", params)
 
 
@@ -203,7 +203,7 @@ async def zabbix_lld_rule_create(
         "lld_macro_paths": lld_macro_paths,
         "description": description,
     })
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("discoveryrule.create", params)
 
 
@@ -237,7 +237,7 @@ async def zabbix_lld_rule_update(
         "lld_macro_paths": lld_macro_paths,
         "description": description,
     })
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("discoveryrule.update", params)
 
 
@@ -282,7 +282,7 @@ async def zabbix_lld_item_prototype_create(
         "preprocessing": preprocessing,
         "description": description,
     })
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("itemprototype.create", params)
 
 
@@ -318,7 +318,7 @@ async def zabbix_lld_item_prototype_update(
         "preprocessing": preprocessing,
         "description": description,
     })
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("itemprototype.update", params)
 
 
@@ -356,7 +356,7 @@ async def zabbix_lld_trigger_prototype_create(
         "recovery_mode": recovery_mode,
         "recovery_expression": recovery_expression,
     })
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("triggerprototype.create", params)
 
 
@@ -386,7 +386,7 @@ async def zabbix_lld_trigger_prototype_update(
         "comments": comments,
         "url": url,
     })
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("triggerprototype.update", params)
 
 
@@ -416,7 +416,7 @@ async def zabbix_lld_graph_prototype_create(
         "graphtype": type,
         "show_legend": show_legend,
     }
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("graphprototype.create", params)
 
 
@@ -442,7 +442,7 @@ async def zabbix_lld_graph_prototype_update(
         "height": height,
         "graphtype": type,
     })
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("graphprototype.update", params)
 
 
@@ -477,7 +477,7 @@ async def zabbix_lld_host_prototype_create(
         "templates": templates,
         "inventory_mode": inventory_mode,
     })
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("hostprototype.create", params)
 
 
@@ -507,7 +507,7 @@ async def zabbix_lld_host_prototype_update(
         "status": status,
         "inventory_mode": inventory_mode,
     })
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("hostprototype.update", params)
 
 
@@ -523,7 +523,7 @@ async def zabbix_lld_rule_delete(
     itemids: Annotated[list[str], Field(description="IDs of LLD rules to delete.")],
 ) -> dict[str, Any]:
     """Permanently delete Zabbix LLD rules."""
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("discoveryrule.delete", itemids)
 
 
@@ -539,7 +539,7 @@ async def zabbix_lld_item_prototype_delete(
     itemids: Annotated[list[str], Field(description="IDs of item prototypes to delete.")],
 ) -> dict[str, Any]:
     """Permanently delete LLD item prototypes."""
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("itemprototype.delete", itemids)
 
 
@@ -555,7 +555,7 @@ async def zabbix_lld_trigger_prototype_delete(
     triggerids: Annotated[list[str], Field(description="IDs of trigger prototypes to delete.")],
 ) -> dict[str, Any]:
     """Permanently delete LLD trigger prototypes."""
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("triggerprototype.delete", triggerids)
 
 
@@ -571,7 +571,7 @@ async def zabbix_lld_graph_prototype_delete(
     graphids: Annotated[list[str], Field(description="IDs of graph prototypes to delete.")],
 ) -> dict[str, Any]:
     """Permanently delete LLD graph prototypes."""
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("graphprototype.delete", graphids)
 
 
@@ -587,5 +587,5 @@ async def zabbix_lld_host_prototype_delete(
     hostids: Annotated[list[str], Field(description="IDs of host prototypes to delete.")],
 ) -> dict[str, Any]:
     """Permanently delete LLD host prototypes."""
-    async with ZabbixClient() as client:
+    async with shared_session() as client:
         return await client.call("hostprototype.delete", hostids)

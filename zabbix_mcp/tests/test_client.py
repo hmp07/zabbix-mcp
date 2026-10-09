@@ -25,7 +25,27 @@ def _make_api_exception(message: str, code: int = -32602) -> Exception:
     return APIRequestError({"message": message, "data": "", "body": {"code": code}})
 
 
+def _patch_transport():
+    """Patch the aiohttp session and connector used to build the transport.
+
+    _build_shared_transport() now creates the ClientSession explicitly and
+    hands it to AsyncZabbixAPI, so the real aiohttp objects must be replaced
+    or a test would open genuine sockets.
+    """
+    return patch.multiple(
+        "zabbix_mcp.client.aiohttp",
+        ClientSession=AsyncMock,
+        TCPConnector=AsyncMock,
+        ClientTimeout=AsyncMock,
+    )
+
+
 class TestZabbixClientConnect:
+    @pytest.fixture(autouse=True)
+    def _no_real_sockets(self):
+        with _patch_transport():
+            yield
+
     async def test_connects_with_token(self, zabbix_env: dict[str, str]) -> None:
         with patch("zabbix_mcp.client.AsyncZabbixAPI") as MockAPI:
             mock_api = AsyncMock()
@@ -34,9 +54,13 @@ class TestZabbixClientConnect:
             client = ZabbixClient()
             await client._connect()
 
-            MockAPI.assert_called_once_with(
-                url="https://zabbix.example.com/zabbix", timeout=30, validate_certs=True
-            )
+            _, kwargs = MockAPI.call_args
+            assert kwargs["url"] == "https://zabbix.example.com/zabbix"
+            assert kwargs["timeout"] == 30
+            assert kwargs["validate_certs"] is True
+            # The transport is created here and passed in, so zabbix-utils does
+            # not create (and leak) an internal session of its own.
+            assert "client_session" in kwargs
             mock_api.login.assert_awaited_once_with(token="test_token_abc123")
 
     async def test_connects_with_user_password(
@@ -124,9 +148,8 @@ class TestZabbixClientConnect:
             client = ZabbixClient(timeout=60)
             await client._connect()
 
-            MockAPI.assert_called_once_with(
-                url="https://zabbix.example.com/zabbix", timeout=60, validate_certs=True
-            )
+            _, kwargs = MockAPI.call_args
+            assert kwargs["timeout"] == 60
 
 
 class TestZabbixClientCall:
@@ -339,6 +362,8 @@ class TestZabbixClientClose:
             mock_api = AsyncMock()
             MockAPI.return_value = mock_api
 
+            # A standalone client owns its transport; shared_session() is the
+            # process-wide path exercised in test_session.py.
             async with ZabbixClient() as client:
                 client._api = mock_api
                 client._authenticated_with_token = True
